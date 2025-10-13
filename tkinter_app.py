@@ -1,7 +1,8 @@
 import os
+import sys
 import tkinter as tk
 import ttkbootstrap as ttk
-from tkinter import filedialog
+from tkinter import filedialog, scrolledtext
 from tkinter_tool_tip import ToolTip
 import destination_directory
 from destination_directory import DestinationDirectory
@@ -40,6 +41,22 @@ def add_placeholder(entry_widget: tk.Widget, placeholder_text: str):
     entry_widget.bind("<FocusOut>", on_focus_out)
 
 
+class TextRedirector:
+    def __init__(self, text_widget: tk.Text):
+        self.text_widget = text_widget
+
+    def write(self, text: str):
+        if not text:
+            return
+        self.text_widget.configure(state="normal")
+        self.text_widget.insert(tk.END, text)
+        self.text_widget.see(tk.END)
+        self.text_widget.configure(state="disabled")
+
+    def flush(self):
+        self.text_widget.update_idletasks()
+
+
 class TkinterApp:
 
     def __init__(self):
@@ -47,6 +64,24 @@ class TkinterApp:
         self.screen = ttk.Window(themename='journal')
         self.screen.title('Format Episode Names')
         self.screen.geometry('1250x400')
+
+        # Notebook and frames
+        self.notebook = ttk.Notebook(self.screen)
+        self.main_frame = ttk.Frame(self.notebook)
+        self.terminal_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.main_frame, text="Main")
+        self.notebook.add(self.terminal_frame, text="Terminal")
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Terminal output widget
+        self.terminal_output = scrolledtext.ScrolledText(self.terminal_frame, wrap=tk.WORD)
+        self.terminal_output.pack(fill=tk.BOTH, expand=True)
+        self.terminal_output.configure(state="disabled")
+        self.stdout_redirector = TextRedirector(self.terminal_output)
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = self.stdout_redirector
+        sys.stderr = self.stdout_redirector
 
         # variables for buttons and entries
         self.directory_var = tk.StringVar(value="Select Episode Directory Path")
@@ -66,34 +101,34 @@ class TkinterApp:
         self.season_var = tk.StringVar(value='Enter Season:')
 
         # Widgets
-        self.directory_entry = ttk.Entry(master=self.screen, textvariable=self.directory_var, state='disabled')
-        self.select_directory_button = ttk.Button(master=self.screen, text='Select Episode Directory',
+        self.directory_entry = ttk.Entry(master=self.main_frame, textvariable=self.directory_var, state='disabled')
+        self.select_directory_button = ttk.Button(master=self.main_frame, text='Select Episode Directory',
                                                   command=self.select_directory)
 
-        self.episode_name_popup_button = ttk.Button(master=self.screen, text='Input Episode Names',
+        self.episode_name_popup_button = ttk.Button(master=self.main_frame, text='Input Episode Names',
                                                     command=self.popup_ep_names_input_window)
 
-        self.show_name_entry = ttk.Entry(master=self.screen, textvariable=self.tkinter_show_name)
-        self.dual_audio_checkbox = ttk.Checkbutton(master=self.screen, text='Dual Audio?', variable=self.dual_audio_var,
+        self.show_name_entry = ttk.Entry(master=self.main_frame, textvariable=self.tkinter_show_name)
+        self.dual_audio_checkbox = ttk.Checkbutton(master=self.main_frame, text='Dual Audio?', variable=self.dual_audio_var,
                                                    command=self.determine_dual_audio)
 
-        self.flipped_checkbox = ttk.Checkbutton(master=self.screen, text='Reverse episode order?',
+        self.flipped_checkbox = ttk.Checkbutton(master=self.main_frame, text='Reverse episode order?',
                                                 variable=self.flipped_var)
 
-        self.hardlink_button = ttk.Button(master=self.screen, text="Hardlink",
+        self.hardlink_button = ttk.Button(master=self.main_frame, text="Hardlink",
                                           command=lambda: self.run_script(mode="Hardlink"))
-        self.rename_button = ttk.Button(master=self.screen, text="Rename",
+        self.rename_button = ttk.Button(master=self.main_frame, text="Rename",
                                         command=lambda: self.run_script(mode="Rename"))
-        self.preview_button = ttk.Button(master=self.screen, text="Preview",
+        self.preview_button = ttk.Button(master=self.main_frame, text="Preview",
                                          command=lambda: self.run_script(mode="Preview"))
-        self.audio_format_entry = ttk.Entry(master=self.screen, textvariable=self.audio_format_var)
-        self.video_format_entry = ttk.Entry(master=self.screen, textvariable=self.video_format_var)
-        self.source_entry = ttk.Entry(master=self.screen, textvariable=self.source_var)
-        self.resolution_entry = ttk.Entry(master=self.screen, textvariable=self.resolution_var)
-        self.media_type_entry = ttk.Entry(master=self.screen, textvariable=self.media_type_var)
-        self.scene_entry = ttk.Entry(master=self.screen, textvariable=self.scene_var)
-        self.episode_offset_entry = ttk.Entry(master=self.screen, textvariable=self.episode_offset_var)
-        self.season_entry = ttk.Entry(master=self.screen, textvariable=self.season_var)
+        self.audio_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.audio_format_var)
+        self.video_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.video_format_var)
+        self.source_entry = ttk.Entry(master=self.main_frame, textvariable=self.source_var)
+        self.resolution_entry = ttk.Entry(master=self.main_frame, textvariable=self.resolution_var)
+        self.media_type_entry = ttk.Entry(master=self.main_frame, textvariable=self.media_type_var)
+        self.scene_entry = ttk.Entry(master=self.main_frame, textvariable=self.scene_var)
+        self.episode_offset_entry = ttk.Entry(master=self.main_frame, textvariable=self.episode_offset_var)
+        self.season_entry = ttk.Entry(master=self.main_frame, textvariable=self.season_var)
 
         # Display
         self.display_widgets()
@@ -155,7 +190,7 @@ class TkinterApp:
         if selected_directory:
             self.directory_var.set(selected_directory)
             self.media_data_dict["Source Directory"] = selected_directory
-            print(selected_directory)
+            print(selected_directory, flush=True)
 
     def popup_ep_names_input_window(self):
         # Opens the extractor window; it will write back to self.media_data_dict["Episode List"]
