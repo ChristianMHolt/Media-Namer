@@ -208,8 +208,10 @@ class TkinterApp:
         self.media_data_dict["Source Files"] = source_file_list.media_dictionary["Source Files"]
         # print(self.media_data_dict["Source Files"])
 
-        # Ensures the destination directory exists and creates it if not.
-        self.check_directory_exists(self.media_data_dict["DestinationDirectory"])
+        # Ensures the destination directory exists and creates it if not when performing actions
+        # that modify the filesystem. Preview mode should only report what would happen.
+        if mode != "Preview":
+            self.check_directory_exists(self.media_data_dict["DestinationDirectory"])
 
         if mode == "Hardlink":
             self.hardlink_files()
