@@ -42,19 +42,32 @@ def add_placeholder(entry_widget: tk.Widget, placeholder_text: str):
 
 
 class TextRedirector:
-    def __init__(self, text_widget: tk.Text):
+    def __init__(self, text_widget: tk.Text, fallback_stream):
         self.text_widget = text_widget
+        self._fallback_stream = fallback_stream
 
-    def write(self, text: str):
-        if not text:
-            return
+    def _write_to_widget(self, text: str):
         self.text_widget.configure(state="normal")
         self.text_widget.insert(tk.END, text)
         self.text_widget.see(tk.END)
         self.text_widget.configure(state="disabled")
 
+    def write(self, text: str):
+        if not text:
+            return
+        try:
+            self._write_to_widget(text)
+        except (tk.TclError, RuntimeError):
+            # The widget has likely been destroyed; fall back to the original stream.
+            if self._fallback_stream is not None:
+                self._fallback_stream.write(text)
+
     def flush(self):
-        self.text_widget.update_idletasks()
+        try:
+            self.text_widget.update_idletasks()
+        except (tk.TclError, RuntimeError):
+            if self._fallback_stream is not None:
+                self._fallback_stream.flush()
 
 
 class TkinterApp:
@@ -77,11 +90,15 @@ class TkinterApp:
         self.terminal_output = scrolledtext.ScrolledText(self.terminal_frame, wrap=tk.WORD)
         self.terminal_output.pack(fill=tk.BOTH, expand=True)
         self.terminal_output.configure(state="disabled")
-        self.stdout_redirector = TextRedirector(self.terminal_output)
         self._original_stdout = sys.stdout
         self._original_stderr = sys.stderr
+        self.stdout_redirector = TextRedirector(self.terminal_output, self._original_stdout)
+        self.stderr_redirector = TextRedirector(self.terminal_output, self._original_stderr)
         sys.stdout = self.stdout_redirector
-        sys.stderr = self.stdout_redirector
+        sys.stderr = self.stderr_redirector
+
+        # Ensure stdout/stderr are restored when the window closes.
+        self.screen.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # variables for buttons and entries
         self.directory_var = tk.StringVar(value="Select Episode Directory Path")
@@ -315,3 +332,17 @@ class TkinterApp:
         prev_idx = (idx - 1) % len(self.tab_order)
         self.tab_order[prev_idx].focus_set()
         return "break"
+
+    def restore_streams(self):
+        if sys.stdout is self.stdout_redirector:
+            sys.stdout = self._original_stdout
+        if sys.stderr is self.stderr_redirector:
+            sys.stderr = self._original_stderr
+
+    def on_close(self):
+        self.restore_streams()
+        self.screen.destroy()
+
+    def __del__(self):
+        # In case the widget is garbage-collected without the close handler running.
+        self.restore_streams()
