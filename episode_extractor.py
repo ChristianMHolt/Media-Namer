@@ -36,7 +36,21 @@ class EpisodeExtractor:
         self.window.geometry("1000x700")
         self.window.minsize(900, 600)
 
-        ttk.Label(self.window, text="Paste your raw episode list:", font=("Segoe UI", 12, "bold")).pack(pady=5)
+        header_frame = ttk.Frame(self.window)
+        header_frame.pack(fill="x", padx=10, pady=(10, 0))
+
+        self.count_label = ttk.Label(
+            header_frame,
+            text="Episodes extracted: 0",
+            font=("Segoe UI", 11),
+        )
+        self.count_label.pack(side="left")
+
+        ttk.Label(
+            self.window,
+            text="Paste your raw episode list:",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=5)
         self.text_input = scrolledtext.ScrolledText(self.window, width=110, height=20, font=("Consolas", 10))
         self.text_input.pack(padx=10, pady=5, fill="both", expand=True)
 
@@ -45,9 +59,6 @@ class EpisodeExtractor:
         ttk.Label(self.window, text="Comma-delimited output:", font=("Segoe UI", 12, "bold")).pack(pady=5)
         self.output_text = scrolledtext.ScrolledText(self.window, width=110, height=8, font=("Consolas", 10), state="disabled")
         self.output_text.pack(padx=10, pady=5, fill="both", expand=True)
-
-        self.count_label = ttk.Label(self.window, text="Episodes extracted: 0", font=("Segoe UI", 11))
-        self.count_label.pack(pady=5)
 
     def process_and_save(self):
         raw_text = self.text_input.get("1.0", tk.END)
