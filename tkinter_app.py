@@ -118,24 +118,14 @@ class TkinterApp:
         self.season_var = tk.StringVar(value='Enter Season:')
 
         # Widgets
-        self.input_width = 30
-        self.directory_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.directory_var,
-            state='disabled',
-            width=self.input_width,
-        )
+        self.directory_entry = ttk.Entry(master=self.main_frame, textvariable=self.directory_var, state='disabled')
         self.select_directory_button = ttk.Button(master=self.main_frame, text='Select Episode Directory',
                                                   command=self.select_directory)
 
         self.episode_name_popup_button = ttk.Button(master=self.main_frame, text='Input Episode Names',
                                                     command=self.popup_ep_names_input_window)
 
-        self.show_name_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.tkinter_show_name,
-            width=self.input_width,
-        )
+        self.show_name_entry = ttk.Entry(master=self.main_frame, textvariable=self.tkinter_show_name)
         self.dual_audio_checkbox = ttk.Checkbutton(master=self.main_frame, text='Dual Audio?', variable=self.dual_audio_var,
                                                    command=self.determine_dual_audio)
 
@@ -148,16 +138,8 @@ class TkinterApp:
                                         command=lambda: self.run_script(mode="Rename"))
         self.preview_button = ttk.Button(master=self.main_frame, text="Preview",
                                          command=lambda: self.run_script(mode="Preview"))
-        self.audio_format_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.audio_format_var,
-            width=self.input_width,
-        )
-        self.video_format_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.video_format_var,
-            width=self.input_width,
-        )
+        self.audio_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.audio_format_var)
+        self.video_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.video_format_var)
         self.source_options = [
             "BD Remux",
             "BD Encode",
@@ -171,34 +153,13 @@ class TkinterApp:
             textvariable=self.source_var,
             values=self.source_options,
             state="readonly",
-            width=self.input_width,
         )
         self.source_combobox.set(self.source_var.get())
-        self.resolution_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.resolution_var,
-            width=self.input_width,
-        )
-        self.media_type_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.media_type_var,
-            width=self.input_width,
-        )
-        self.scene_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.scene_var,
-            width=self.input_width,
-        )
-        self.episode_offset_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.episode_offset_var,
-            width=self.input_width,
-        )
-        self.season_entry = ttk.Entry(
-            master=self.main_frame,
-            textvariable=self.season_var,
-            width=self.input_width,
-        )
+        self.resolution_entry = ttk.Entry(master=self.main_frame, textvariable=self.resolution_var)
+        self.media_type_entry = ttk.Entry(master=self.main_frame, textvariable=self.media_type_var)
+        self.scene_entry = ttk.Entry(master=self.main_frame, textvariable=self.scene_var)
+        self.episode_offset_entry = ttk.Entry(master=self.main_frame, textvariable=self.episode_offset_var)
+        self.season_entry = ttk.Entry(master=self.main_frame, textvariable=self.season_var)
 
         # Display
         self.display_widgets()
