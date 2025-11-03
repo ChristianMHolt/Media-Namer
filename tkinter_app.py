@@ -106,6 +106,9 @@ class TkinterApp:
         self.tkinter_show_name = tk.StringVar(value='Enter show name:')
         self.enter_episode_names = None
         self.media_data_dict = {}
+        # Default to no dual audio so downstream consumers don't fail before the
+        # checkbox is interacted with.
+        self.media_data_dict["Dual Audio"] = ""
         self.dual_audio_var = tk.IntVar(value=0)
         self.flipped_var = tk.IntVar(value=0)  # leave as requested
         self.audio_format_var = tk.StringVar(value='Enter Audio Format:')
