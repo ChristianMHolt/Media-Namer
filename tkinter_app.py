@@ -111,7 +111,7 @@ class TkinterApp:
         self.audio_format_var = tk.StringVar(value='Enter Audio Format:')
         self.video_format_var = tk.StringVar(value='Enter Video Format:')
         self.source_var = tk.StringVar(value='BD Encode')
-        self.resolution_var = tk.StringVar(value='Enter Resolution:')
+        self.resolution_var = tk.StringVar(value='1080p')
         self.media_type_var = tk.StringVar(value='Enter Media Type:')
         self.scene_var = tk.StringVar(value='Enter Scene:')
         self.episode_offset_var = tk.StringVar(value='Enter Episode Offset:')
@@ -155,7 +155,19 @@ class TkinterApp:
             state="readonly",
         )
         self.source_combobox.set(self.source_var.get())
-        self.resolution_entry = ttk.Entry(master=self.main_frame, textvariable=self.resolution_var)
+        self.resolution_options = [
+            "2160p",
+            "1080p",
+            "720p",
+            "800p",
+        ]
+        self.resolution_combobox = ttk.Combobox(
+            master=self.main_frame,
+            textvariable=self.resolution_var,
+            values=self.resolution_options,
+            state="readonly",
+        )
+        self.resolution_combobox.set(self.resolution_var.get())
         self.media_type_entry = ttk.Entry(master=self.main_frame, textvariable=self.media_type_var)
         self.scene_entry = ttk.Entry(master=self.main_frame, textvariable=self.scene_var)
         self.episode_offset_entry = ttk.Entry(master=self.main_frame, textvariable=self.episode_offset_var)
@@ -168,7 +180,6 @@ class TkinterApp:
         add_placeholder(self.show_name_entry, 'Enter show name:')
         add_placeholder(self.audio_format_entry, 'Enter Audio Format:')
         add_placeholder(self.video_format_entry, 'Enter Video Format:')
-        add_placeholder(self.resolution_entry, 'Enter Resolution:')
         add_placeholder(self.media_type_entry, 'Enter Media Type:')
         add_placeholder(self.scene_entry, 'Enter Scene:')
         add_placeholder(self.episode_offset_entry, 'Enter Episode Offset:')
@@ -179,7 +190,7 @@ class TkinterApp:
         ToolTip(self.audio_format_entry, "e.g., FLAC, DTS, OPUS, AAC.")
         ToolTip(self.video_format_entry, "e.g., AVC, H.264, H.265.")
         ToolTip(self.source_combobox, "e.g., BluRay, Disk, WEB-DL.")
-        ToolTip(self.resolution_entry, "e.g., 720p, 800p, 1080p, 2160p.")
+        ToolTip(self.resolution_combobox, "Select the episode resolution.")
         ToolTip(self.media_type_entry, "e.g., Movie, TV, or Anime.")
         ToolTip(self.scene_entry, "e.g., Zaki, SubsPlease, Beatrice-Raws.")
         ToolTip(self.episode_offset_entry, "The number for the first episode -1.")
@@ -193,7 +204,7 @@ class TkinterApp:
             self.scene_entry,         # 4
             self.video_format_entry,  # 5
             self.episode_offset_entry,# 6
-            self.resolution_entry,    # 7
+            self.resolution_combobox, # 7
             self.audio_format_entry,  # 8
             self.media_type_entry,    # 9
         ]
@@ -242,7 +253,7 @@ class TkinterApp:
 
         # Row 2
         self.episode_name_popup_button.grid(row=2, column=0, padx=5, pady=10)
-        self.resolution_entry.grid(row=2, column=1, padx=5, pady=10)
+        self.resolution_combobox.grid(row=2, column=1, padx=5, pady=10)
         self.audio_format_entry.grid(row=2, column=2, padx=5, pady=10)
         self.media_type_entry.grid(row=2, column=3, padx=5, pady=10)
 
