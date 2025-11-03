@@ -109,7 +109,7 @@ class TkinterApp:
         self.dual_audio_var = tk.IntVar(value=0)
         self.flipped_var = tk.IntVar(value=0)  # leave as requested
         self.audio_format_var = tk.StringVar(value='Enter Audio Format:')
-        self.video_format_var = tk.StringVar(value='Enter Video Format:')
+        self.video_format_var = tk.StringVar(value='SVT-AV1')
         self.source_var = tk.StringVar(value='BD Encode')
         self.resolution_var = tk.StringVar(value='1080p')
         self.media_type_var = tk.StringVar(value='Enter Media Type:')
@@ -139,7 +139,19 @@ class TkinterApp:
         self.preview_button = ttk.Button(master=self.main_frame, text="Preview",
                                          command=lambda: self.run_script(mode="Preview"))
         self.audio_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.audio_format_var)
-        self.video_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.video_format_var)
+        self.video_format_options = [
+            "H.264",
+            "H.265",
+            "AV1",
+            "SVT-AV1",
+        ]
+        self.video_format_combobox = ttk.Combobox(
+            master=self.main_frame,
+            textvariable=self.video_format_var,
+            values=self.video_format_options,
+            state="readonly",
+        )
+        self.video_format_combobox.set(self.video_format_var.get())
         self.source_options = [
             "BD Remux",
             "BD Encode",
@@ -179,7 +191,6 @@ class TkinterApp:
         # Apply placeholders (keep your StringVars; just style as placeholder + clear/restore on focus)
         add_placeholder(self.show_name_entry, 'Enter show name:')
         add_placeholder(self.audio_format_entry, 'Enter Audio Format:')
-        add_placeholder(self.video_format_entry, 'Enter Video Format:')
         add_placeholder(self.media_type_entry, 'Enter Media Type:')
         add_placeholder(self.scene_entry, 'Enter Scene:')
         add_placeholder(self.episode_offset_entry, 'Enter Episode Offset:')
@@ -188,7 +199,7 @@ class TkinterApp:
         # Tool Tips
         ToolTip(self.show_name_entry, "The name of the show.")
         ToolTip(self.audio_format_entry, "e.g., FLAC, DTS, OPUS, AAC.")
-        ToolTip(self.video_format_entry, "e.g., AVC, H.264, H.265.")
+        ToolTip(self.video_format_combobox, "Select the video codec.")
         ToolTip(self.source_combobox, "e.g., BluRay, Disk, WEB-DL.")
         ToolTip(self.resolution_combobox, "Select the episode resolution.")
         ToolTip(self.media_type_entry, "e.g., Movie, TV, or Anime.")
@@ -202,7 +213,7 @@ class TkinterApp:
             self.source_combobox,     # 2
             self.season_entry,        # 3
             self.scene_entry,         # 4
-            self.video_format_entry,  # 5
+            self.video_format_combobox,  # 5
             self.episode_offset_entry,# 6
             self.resolution_combobox, # 7
             self.audio_format_entry,  # 8
@@ -248,7 +259,7 @@ class TkinterApp:
         # Row 1
         self.select_directory_button.grid(row=1, column=0, padx=5, pady=10)
         self.scene_entry.grid(row=1, column=1, padx=5, pady=10)
-        self.video_format_entry.grid(row=1, column=2, padx=5, pady=10)
+        self.video_format_combobox.grid(row=1, column=2, padx=5, pady=10)
         self.episode_offset_entry.grid(row=1, column=3, padx=5, pady=10)
 
         # Row 2
