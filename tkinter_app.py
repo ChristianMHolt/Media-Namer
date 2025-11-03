@@ -154,6 +154,8 @@ class TkinterApp:
             values=self.source_options,
             state="readonly",
         )
+        # Match the combobox width with the standard entry width for visual consistency
+        self.source_combobox.configure(width=self.show_name_entry.cget("width"))
         self.source_combobox.set(self.source_var.get())
         self.resolution_entry = ttk.Entry(master=self.main_frame, textvariable=self.resolution_var)
         self.media_type_entry = ttk.Entry(master=self.main_frame, textvariable=self.media_type_var)
