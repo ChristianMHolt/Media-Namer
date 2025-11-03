@@ -110,7 +110,7 @@ class TkinterApp:
         self.flipped_var = tk.IntVar(value=0)  # leave as requested
         self.audio_format_var = tk.StringVar(value='Enter Audio Format:')
         self.video_format_var = tk.StringVar(value='Enter Video Format:')
-        self.source_var = tk.StringVar(value='Enter Source:')
+        self.source_var = tk.StringVar(value='BD Encode')
         self.resolution_var = tk.StringVar(value='Enter Resolution:')
         self.media_type_var = tk.StringVar(value='Enter Media Type:')
         self.scene_var = tk.StringVar(value='Enter Scene:')
@@ -140,7 +140,27 @@ class TkinterApp:
                                          command=lambda: self.run_script(mode="Preview"))
         self.audio_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.audio_format_var)
         self.video_format_entry = ttk.Entry(master=self.main_frame, textvariable=self.video_format_var)
-        self.source_entry = ttk.Entry(master=self.main_frame, textvariable=self.source_var)
+        self.source_options = [
+            "BD Remux",
+            "BD Encode",
+            "CD Remux",
+            "CD Encode",
+            "WEB-DL",
+            "WEB-RIP",
+        ]
+        self.source_combobox = ttk.Combobox(
+            master=self.main_frame,
+            textvariable=self.source_var,
+            values=self.source_options,
+            state="readonly",
+        )
+        self.source_combobox.set(self.source_var.get())
+        entry_width = self.show_name_entry.cget("width")
+        try:
+            self.source_combobox.configure(width=int(entry_width))
+        except (TypeError, ValueError):
+            if entry_width:
+                self.source_combobox.configure(width=entry_width)
         self.resolution_entry = ttk.Entry(master=self.main_frame, textvariable=self.resolution_var)
         self.media_type_entry = ttk.Entry(master=self.main_frame, textvariable=self.media_type_var)
         self.scene_entry = ttk.Entry(master=self.main_frame, textvariable=self.scene_var)
@@ -154,7 +174,6 @@ class TkinterApp:
         add_placeholder(self.show_name_entry, 'Enter show name:')
         add_placeholder(self.audio_format_entry, 'Enter Audio Format:')
         add_placeholder(self.video_format_entry, 'Enter Video Format:')
-        add_placeholder(self.source_entry, 'Enter Source:')
         add_placeholder(self.resolution_entry, 'Enter Resolution:')
         add_placeholder(self.media_type_entry, 'Enter Media Type:')
         add_placeholder(self.scene_entry, 'Enter Scene:')
@@ -165,7 +184,7 @@ class TkinterApp:
         ToolTip(self.show_name_entry, "The name of the show.")
         ToolTip(self.audio_format_entry, "e.g., FLAC, DTS, OPUS, AAC.")
         ToolTip(self.video_format_entry, "e.g., AVC, H.264, H.265.")
-        ToolTip(self.source_entry, "e.g., BluRay, Disk, WEB-DL.")
+        ToolTip(self.source_combobox, "e.g., BluRay, Disk, WEB-DL.")
         ToolTip(self.resolution_entry, "e.g., 720p, 800p, 1080p, 2160p.")
         ToolTip(self.media_type_entry, "e.g., Movie, TV, or Anime.")
         ToolTip(self.scene_entry, "e.g., Zaki, SubsPlease, Beatrice-Raws.")
@@ -175,7 +194,7 @@ class TkinterApp:
         # Custom Tab order (left-to-right, row-by-row as requested)
         self.tab_order = [
             self.show_name_entry,     # 1
-            self.source_entry,        # 2
+            self.source_combobox,     # 2
             self.season_entry,        # 3
             self.scene_entry,         # 4
             self.video_format_entry,  # 5
@@ -218,7 +237,7 @@ class TkinterApp:
         # Row 0
         self.directory_entry.grid(row=0, column=0, padx=5, pady=10)
         self.show_name_entry.grid(row=0, column=1, padx=5, pady=10)
-        self.source_entry.grid(row=0, column=2, padx=5, pady=10)
+        self.source_combobox.grid(row=0, column=2, padx=5, pady=10)
         self.season_entry.grid(row=0, column=3, padx=5, pady=10)
 
         # Row 1
