@@ -5,7 +5,11 @@ class FinalFileNames:
     def __init__(self, destination_directory, media_dictionary):
         self.destination_directory = destination_directory
         self.media_dictionary = media_dictionary
-        self.dual_audio = self.media_dictionary["Dual Audio"]
+        # When the GUI hasn't toggled the dual-audio checkbox yet, the
+        # media dictionary won't have a "Dual Audio" entry. Default to an empty
+        # string so callers that don't care about dual audio can still generate
+        # file names without crashing.
+        self.dual_audio = self.media_dictionary.get("Dual Audio", "")
         self.show_name = self.media_dictionary["Show Name"]
         self.media_type = self.media_dictionary["Media Type"]
         self.offset = self.media_dictionary["Episode Offset"]
