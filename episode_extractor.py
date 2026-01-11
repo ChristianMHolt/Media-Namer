@@ -1,5 +1,9 @@
+import json
 import re
 import tkinter as tk
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote_plus
+from urllib.request import urlopen
 try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import DANGER, INFO, SUCCESS
@@ -63,7 +67,21 @@ class EpisodeExtractor:
         self.text_input = scrolledtext.ScrolledText(self.window, width=110, height=20, font=("Consolas", 10))
         self.text_input.pack(padx=10, pady=5, fill="both", expand=True)
 
-        ttk.Button(self.window, text="Process & Save", bootstyle=SUCCESS, command=self.process_and_save).pack(pady=10)
+        button_frame = ttk.Frame(self.window)
+        button_frame.pack(pady=10)
+
+        ttk.Button(
+            button_frame,
+            text="Fetch Episode Names Online",
+            bootstyle=INFO,
+            command=self.fetch_episode_names_online,
+        ).pack(side="left", padx=5)
+        ttk.Button(
+            button_frame,
+            text="Process & Save",
+            bootstyle=SUCCESS,
+            command=self.process_and_save,
+        ).pack(side="left", padx=5)
 
         ttk.Label(self.window, text="Comma-delimited output:", font=("Segoe UI", 12, "bold")).pack(pady=5)
         self.output_text = scrolledtext.ScrolledText(
@@ -130,6 +148,69 @@ class EpisodeExtractor:
         else:
             self.count_label.config(text="Episodes extracted: 0", bootstyle=DANGER)
 
+    def fetch_episode_names_online(self):
+        show_name = self._get_show_name()
+        season_number = self._get_season_number()
+
+        if not show_name or season_number is None:
+            return
+
+        try:
+            titles = fetch_episode_titles_from_tvmaze(show_name, season_number)
+        except (HTTPError, URLError, ValueError) as exc:
+            self._set_status_error(f"Online lookup failed: {exc}")
+            return
+
+        if not titles:
+            self._set_status_error(f"No episodes found for {show_name} season {season_number}.")
+            return
+
+        if self.parent_app.flipped_var.get() == 0:
+            titles.reverse()
+
+        self._update_episode_list(titles)
+
+        result = ",".join(titles)
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert(tk.END, result)
+        self.count_label.config(text=f"Episodes fetched: {len(titles)}", bootstyle=SUCCESS)
+
+    def _get_show_name(self):
+        raw_name = ""
+        if hasattr(self.parent_app, "tkinter_show_name"):
+            raw_name = self.parent_app.tkinter_show_name.get()
+        if not raw_name and self.parent_app.media_data_dict.get("Show Name"):
+            raw_name = self.parent_app.media_data_dict["Show Name"]
+        show_name = raw_name.strip()
+        if not show_name or show_name == "Enter show name:":
+            self._set_status_error("Enter a show name before fetching episodes.")
+            return ""
+        return show_name
+
+    def _get_season_number(self):
+        raw_season = ""
+        if hasattr(self.parent_app, "season_var"):
+            raw_season = self.parent_app.season_var.get()
+        if not raw_season and self.parent_app.media_data_dict.get("Season"):
+            raw_season = self.parent_app.media_data_dict["Season"]
+        season_text = raw_season.strip()
+        if not season_text or season_text == "Enter Season:":
+            self._set_status_error("Enter a season number before fetching episodes.")
+            return None
+        try:
+            season_number = int(season_text)
+        except ValueError:
+            self._set_status_error("Season must be a number.")
+            return None
+        if season_number < 0:
+            self._set_status_error("Season must be a positive number.")
+            return None
+        return season_number
+
+    def _set_status_error(self, message: str):
+        self.count_label.config(text=message, bootstyle=DANGER)
+        print(message, flush=True)
+
 
 def parse_manual_episode_titles(raw_text: str):
     """Parse a comma-delimited string into sanitized episode titles."""
@@ -141,4 +222,27 @@ def parse_manual_episode_titles(raw_text: str):
         cleaned_part = make_windows_safe(part.strip())
         if cleaned_part:
             titles.append(cleaned_part)
+    return titles
+
+
+def fetch_episode_titles_from_tvmaze(show_name: str, season_number: int):
+    """Fetch episode titles from TVMaze for the requested season."""
+    if not show_name:
+        raise ValueError("Show name is required.")
+
+    url = f"https://api.tvmaze.com/singlesearch/shows?q={quote_plus(show_name)}&embed=episodes"
+    with urlopen(url, timeout=10) as response:
+        payload = json.load(response)
+
+    episodes = payload.get("_embedded", {}).get("episodes", [])
+    season_matches = [
+        episode for episode in episodes if episode.get("season") == season_number
+    ]
+    season_matches.sort(key=lambda episode: episode.get("number") or 0)
+
+    titles = []
+    for episode in season_matches:
+        name = make_windows_safe(str(episode.get("name", "")).strip())
+        if name:
+            titles.append(name)
     return titles
