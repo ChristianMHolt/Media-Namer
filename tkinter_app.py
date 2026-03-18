@@ -155,10 +155,11 @@ class TkinterApp:
         self.source_options = [
             "BD Remux",
             "BD Encode",
-            "CD Remux",
-            "CD Encode",
+            "DVD Remux",
+            "DVD Encode",
             "WEB-DL",
             "WEB-RIP",
+            "Airing",
         ]
         self.source_combobox = ttk.Combobox(
             master=self.main_frame,
@@ -170,8 +171,9 @@ class TkinterApp:
         self.resolution_options = [
             "2160p",
             "1080p",
-            "720p",
             "800p",
+            "720p",
+            "480p",
         ]
         self.resolution_combobox = ttk.Combobox(
             master=self.main_frame,
