@@ -1,0 +1,78 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MediaNamer.MainWindow"
+        Title="Format Episode Names" Width="1250" Height="400">
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Margin" Value="5,10" />
+            <Setter Property="Width" Value="200"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Margin" Value="5,10" />
+            <Setter Property="Width" Value="200"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Margin" Value="5,10" />
+            <Setter Property="Width" Value="200"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Margin" Value="5,10" />
+        </Style>
+    </Window.Styles>
+
+    <TabControl>
+        <TabItem Header="Main">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto,Auto" Margin="10">
+                <!-- Row 0 -->
+                <TextBox Grid.Row="0" Grid.Column="0" x:Name="DirectoryEntry" IsEnabled="False" Text="Select Episode Directory Path"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="ShowNameEntry" Watermark="Enter show name:" ToolTip.Tip="The name of the show."/>
+                <ComboBox Grid.Row="0" Grid.Column="2" x:Name="SourceCombobox" ToolTip.Tip="e.g., BluRay, Disk, WEB-DL." SelectedIndex="1">
+                    <ComboBoxItem>BD Remux</ComboBoxItem>
+                    <ComboBoxItem>BD Encode</ComboBoxItem>
+                    <ComboBoxItem>DVD Remux</ComboBoxItem>
+                    <ComboBoxItem>DVD Encode</ComboBoxItem>
+                    <ComboBoxItem>WEB-DL</ComboBoxItem>
+                    <ComboBoxItem>WEB-RIP</ComboBoxItem>
+                    <ComboBoxItem>Airing</ComboBoxItem>
+                </ComboBox>
+                <TextBox Grid.Row="0" Grid.Column="3" x:Name="SeasonEntry" Watermark="Enter Season:" ToolTip.Tip="The season the episodes are apart of."/>
+
+                <!-- Row 1 -->
+                <Button Grid.Row="1" Grid.Column="0" Content="Select Episode Directory" Click="SelectDirectory_Click"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SceneEntry" Watermark="Enter Scene:" ToolTip.Tip="e.g., Zaki, SubsPlease, Beatrice-Raws."/>
+                <ComboBox Grid.Row="1" Grid.Column="2" x:Name="VideoFormatCombobox" ToolTip.Tip="Select the video codec." SelectedIndex="3">
+                    <ComboBoxItem>H.264</ComboBoxItem>
+                    <ComboBoxItem>H.265</ComboBoxItem>
+                    <ComboBoxItem>AV1</ComboBoxItem>
+                    <ComboBoxItem>SVT-AV1</ComboBoxItem>
+                </ComboBox>
+                <TextBox Grid.Row="1" Grid.Column="3" x:Name="EpisodeOffsetEntry" Watermark="Enter Episode Offset:" ToolTip.Tip="The number for the first episode -1."/>
+
+                <!-- Row 2 -->
+                <Button Grid.Row="2" Grid.Column="0" Content="Input Episode Names" Click="InputEpisodeNames_Click"/>
+                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="ResolutionCombobox" ToolTip.Tip="Select the episode resolution." SelectedIndex="1">
+                    <ComboBoxItem>2160p</ComboBoxItem>
+                    <ComboBoxItem>1080p</ComboBoxItem>
+                    <ComboBoxItem>800p</ComboBoxItem>
+                    <ComboBoxItem>720p</ComboBoxItem>
+                    <ComboBoxItem>480p</ComboBoxItem>
+                </ComboBox>
+                <TextBox Grid.Row="2" Grid.Column="2" x:Name="AudioFormatEntry" Watermark="Enter Audio Format:" ToolTip.Tip="e.g., FLAC, DTS, OPUS, AAC."/>
+                <TextBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" Watermark="Enter Media Type:" ToolTip.Tip="e.g., Movie, TV, or Anime."/>
+
+                <!-- Row 3 -->
+                <CheckBox Grid.Row="3" Grid.Column="0" x:Name="DualAudioCheckbox" Content="Dual Audio?" IsCheckedChanged="DualAudio_Changed"/>
+                <CheckBox Grid.Row="3" Grid.Column="1" x:Name="FlippedCheckbox" Content="Reverse episode order?"/>
+                <Button Grid.Row="3" Grid.Column="2" Content="Hardlink" Click="Hardlink_Click" Background="#2196F3" Foreground="White"/>
+                <Button Grid.Row="3" Grid.Column="3" Content="Rename" Click="Rename_Click" Background="#4CAF50" Foreground="White"/>
+
+                <!-- Row 4 -->
+                <Button Grid.Row="4" Grid.Column="2" Content="Preview" Click="Preview_Click" Background="#FF9800" Foreground="White"/>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Terminal">
+            <TextBox x:Name="TerminalOutput" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True" FontFamily="Consolas" FontSize="12"/>
+        </TabItem>
+    </TabControl>
+</Window>
