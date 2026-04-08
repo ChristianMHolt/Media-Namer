@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MediaNamer.EpisodeExtractorWindow"
+        Title="Episode Name Extractor" Width="1000" Height="700" MinWidth="900" MinHeight="600">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,120,Auto" Margin="10">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,10,0,10">
+            <TextBlock x:Name="CountLabel" Text="Episodes extracted: 0" FontSize="16" Foreground="Green" FontWeight="Bold"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Text="Paste your raw episode list:" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBox Grid.Row="2" x:Name="RawEpisodeInput" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,10"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,10,0,10">
+            <Button Content="Fetch Episode Names Online" Click="FetchEpisodeNamesOnline_Click" Background="#2196F3" Foreground="White" />
+            <Button Content="Process &amp; Save" Click="ProcessAndSave_Click" Background="#4CAF50" Foreground="White"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="4" Text="Comma-delimited output:" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBox Grid.Row="5" x:Name="OutputText" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,10"/>
+
+        <Button Grid.Row="6" Content="Use Manual Episode Names" Click="UseManualEpisodeNames_Click" Background="#2196F3" Foreground="White" HorizontalAlignment="Left"/>
+    </Grid>
+</Window>
