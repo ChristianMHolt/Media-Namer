@@ -72,7 +72,15 @@
             </Grid>
         </TabItem>
         <TabItem Header="Terminal">
-            <TextBox x:Name="TerminalOutput" AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True" FontFamily="Consolas" FontSize="12"/>
-        </TabItem>
+			<TextBox x:Name="TerminalOutput" 
+				AcceptsReturn="True" 
+				TextWrapping="Wrap" 
+				IsReadOnly="True" 
+				FontFamily="Consolas" 
+				FontSize="12"
+				HorizontalAlignment="Stretch"
+				Width="NaN"
+				Margin="10"/>
+		</TabItem>
     </TabControl>
 </Window>
