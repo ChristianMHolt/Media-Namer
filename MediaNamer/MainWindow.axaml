@@ -12,10 +12,12 @@
             <Setter Property="Width" Value="200"/>
         </Style>
         <Style Selector="Button">
-            <Setter Property="Margin" Value="5,10" />
-            <Setter Property="Width" Value="200"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
+			<Setter Property="Margin" Value="5,10" />
+			<Setter Property="Width" Value="200"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
+			<Setter Property="Background" Value="#4169E1"/>
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
         <Style Selector="CheckBox">
             <Setter Property="Margin" Value="5,10" />
         </Style>
@@ -59,16 +61,20 @@
                     <ComboBoxItem>480p</ComboBoxItem>
                 </ComboBox>
                 <TextBox Grid.Row="2" Grid.Column="2" x:Name="AudioFormatEntry" Watermark="Enter Audio Format:" ToolTip.Tip="e.g., FLAC, DTS, OPUS, AAC."/>
-                <TextBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" Watermark="Enter Media Type:" ToolTip.Tip="e.g., Movie, TV, or Anime."/>
+				<ComboBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" SelectedIndex="0" ToolTip.Tip="Select Media Type (TV, Anime, or Movie).">
+					<ComboBoxItem Content="TV"/>
+					<ComboBoxItem Content="Anime"/>
+					<ComboBoxItem Content="Movie"/>
+				</ComboBox>
 
                 <!-- Row 3 -->
                 <CheckBox Grid.Row="3" Grid.Column="0" x:Name="DualAudioCheckbox" Content="Dual Audio?" IsCheckedChanged="DualAudio_Changed"/>
                 <CheckBox Grid.Row="3" Grid.Column="1" x:Name="FlippedCheckbox" Content="Reverse episode order?"/>
-                <Button Grid.Row="3" Grid.Column="2" Content="Hardlink" Click="Hardlink_Click" Background="#2196F3" Foreground="White"/>
-                <Button Grid.Row="3" Grid.Column="3" Content="Rename" Click="Rename_Click" Background="#4CAF50" Foreground="White"/>
+                <Button Grid.Row="3" Grid.Column="2" Content="Hardlink" Click="Hardlink_Click"/>
+                <Button Grid.Row="3" Grid.Column="3" Content="Rename" Click="Rename_Click"/>
 
                 <!-- Row 4 -->
-                <Button Grid.Row="4" Grid.Column="2" Content="Preview" Click="Preview_Click" Background="#FF9800" Foreground="White"/>
+                <Button Grid.Row="4" Grid.Column="2" Content="Preview" Click="Preview_Click"/>
             </Grid>
         </TabItem>
         <TabItem Header="Terminal">

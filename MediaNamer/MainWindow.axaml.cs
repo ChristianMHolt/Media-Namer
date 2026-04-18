@@ -27,33 +27,72 @@ namespace MediaNamer
             _mediaDataDict.VideoFormat = (VideoFormatCombobox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
             _mediaDataDict.Source = (SourceCombobox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
             _mediaDataDict.Resolution = (ResolutionCombobox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-            _mediaDataDict.MediaType = MediaTypeEntry.Text ?? "";
             _mediaDataDict.Scene = SceneEntry.Text ?? "";
             _mediaDataDict.EpisodeOffset = EpisodeOffsetEntry.Text ?? "0";
             _mediaDataDict.ShowName = ShowNameEntry.Text ?? "";
             _mediaDataDict.Season = SeasonEntry.Text ?? "";
+			if (MediaTypeEntry.SelectedItem is ComboBoxItem item)
+			{
+				_mediaDataDict.MediaType = item.Content?.ToString() ?? "";
+			}
 
             _mediaDataDict.DualAudio = DualAudioCheckbox.IsChecked == true ? "Dual Audio" : "";
         }
 
-        private async void SelectDirectory_Click(object sender, RoutedEventArgs e)
-        {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel == null) return;
+		private async void SelectDirectory_Click(object sender, RoutedEventArgs e)
+		{
+			var topLevel = TopLevel.GetTopLevel(this);
+			if (topLevel == null) return;
 
-            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-            {
-                Title = "Select Episode Directory"
-            });
+			// Extract the string content from the selected ComboBoxItem
+			string mediaType = "";
+			if (MediaTypeEntry.SelectedItem is ComboBoxItem item)
+			{
+				mediaType = item.Content?.ToString()?.ToLower() ?? "";
+			}
 
-            if (folders.Count >= 1)
-            {
-                string path = folders[0].Path.LocalPath;
-                DirectoryEntry.Text = path;
-                _mediaDataDict.SourceDirectory = path;
-                Console.WriteLine(path);
-            }
-        }
+			string suggestedPath = @"X:\SeedingTorrents"; // Fallback
+
+			if (mediaType == "tv")
+			{
+				suggestedPath = @"X:\SeedingTorrents\TV Shows";
+			}
+			else if (mediaType == "anime")
+			{
+				suggestedPath = @"X:\SeedingTorrents\Anime";
+			}
+			else if (mediaType == "movie")
+			{
+				suggestedPath = @"X:\SeedingTorrents\Movies";
+			}
+
+			IStorageFolder? startLocation = null;
+			try 
+			{
+				if (Directory.Exists(suggestedPath))
+				{
+					startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(suggestedPath);
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Could not access path: {ex.Message}");
+			}
+
+			var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+			{
+				Title = "Select Episode Directory",
+				SuggestedStartLocation = startLocation
+			});
+
+			if (folders.Count >= 1)
+			{
+				string path = folders[0].Path.LocalPath;
+				DirectoryEntry.Text = path;
+				_mediaDataDict.SourceDirectory = path;
+				Console.WriteLine(path);
+			}
+		}
 
         private void InputEpisodeNames_Click(object sender, RoutedEventArgs e)
         {
