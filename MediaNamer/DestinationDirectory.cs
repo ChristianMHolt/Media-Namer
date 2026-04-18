@@ -36,7 +36,7 @@ namespace MediaNamer
             DestinationDirectory = CreateDestinationDirectory();
         }
 
-        private void EvaluateExistingShow()
+		private void EvaluateExistingShow()
         {
             if (string.IsNullOrEmpty(BasePath) || !Directory.Exists(BasePath) || string.IsNullOrEmpty(MediaDictionary.ShowName))
             {
@@ -52,21 +52,42 @@ namespace MediaNamer
                 int bracketIndex = MediaPath.IndexOf(" [");
                 if (bracketIndex != -1)
                 {
-                    newTags = MediaPath.Substring(bracketIndex);
+                    // Use Trim() to temporarily remove the leading space for clean splitting
+                    newTags = MediaPath.Substring(bracketIndex).Trim();
                 }
 
                 string existingTags = "";
                 int existingBracketIndex = existingFolderName.IndexOf(" [");
                 if (existingBracketIndex != -1)
                 {
-                    existingTags = existingFolderName.Substring(existingBracketIndex);
+                    existingTags = existingFolderName.Substring(existingBracketIndex).Trim();
                 }
 
                 MediaPath = existingFolderName;
 
                 if (MediaType != "Movie" && !string.IsNullOrEmpty(newTags) && newTags != existingTags)
                 {
-                    SeasonPath += newTags;
+                    // Split the tag strings into arrays, discarding the brackets
+                    var newTagArray = newTags.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+                    var existingTagArray = existingTags.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    string differingTags = "";
+
+                    // Loop through the new tags and compare them to the existing tags at the same position
+                    for (int i = 0; i < newTagArray.Length; i++)
+                    {
+                        if (i >= existingTagArray.Length || newTagArray[i] != existingTagArray[i])
+                        {
+                            // If the tag is different, or the existing array is shorter, keep this tag
+                            differingTags += $"[{newTagArray[i]}]";
+                        }
+                    }
+
+                    // Append only the differing tags to the SeasonPath with a leading space
+                    if (!string.IsNullOrEmpty(differingTags))
+                    {
+                        SeasonPath += $" {differingTags}";
+                    }
                 }
             }
         }

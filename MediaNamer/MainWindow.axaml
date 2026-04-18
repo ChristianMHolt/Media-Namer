@@ -64,7 +64,7 @@
                     <ComboBoxItem>480p</ComboBoxItem>
                 </ComboBox>
                 <TextBox Grid.Row="2" Grid.Column="2" x:Name="AudioFormatEntry" Watermark="Enter Audio Format:" ToolTip.Tip="e.g., FLAC, DTS, OPUS, AAC."/>
-				<ComboBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" SelectedIndex="0" ToolTip.Tip="Select Media Type (TV, Anime, or Movie).">
+				<ComboBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" SelectedIndex="0" ToolTip.Tip="Select Media Type (TV, Anime, or Movie)." SelectionChanged="MediaType_SelectionChanged">
 					<ComboBoxItem Content="TV"/>
 					<ComboBoxItem Content="Anime"/>
 					<ComboBoxItem Content="Movie"/>

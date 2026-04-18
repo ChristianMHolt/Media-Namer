@@ -147,37 +147,29 @@ namespace MediaNamer
             SourceCombobox.SelectedIndex = -1;
             VideoFormatCombobox.SelectedIndex = -1;
 
-            // Extract Scene if present in the beginning like [Scene]
-            var sceneMatch = Regex.Match(folderName, @"^\[(.*?)\]");
-            if (sceneMatch.Success)
-            {
-                SceneEntry.Text = sceneMatch.Groups[1].Value.Trim();
-            }
-
-            // Extract Show Name
-            // Remove everything in [] and ()
-            string cleanName = Regex.Replace(folderName, @"\[.*?\]|\(.*?\)", "");
-
-            // Look for Season info
-            var seasonMatch = Regex.Match(cleanName, @"(?i)(?:Season\s+|S)(\d+)");
-            if (seasonMatch.Success)
-            {
-                SeasonEntry.Text = seasonMatch.Groups[1].Value.Trim();
-                cleanName = cleanName.Replace(seasonMatch.Value, ""); // remove season from showname
-            }
-
-            // Clean up name
-            cleanName = cleanName.Trim();
-            if (cleanName.EndsWith("-"))
-            {
-                cleanName = cleanName.Substring(0, cleanName.Length - 1).Trim();
-            }
-            if (!string.IsNullOrEmpty(cleanName))
-            {
-                ShowNameEntry.Text = cleanName;
-            }
-
             string lowerFolder = folderName.ToLower();
+
+            // Extract Scene/Release Group
+            // Matches [Group] at start OR -Group at the end
+            var sceneMatchStart = Regex.Match(folderName, @"^\[(.*?)\]");
+            var sceneMatchEnd = Regex.Match(folderName, @"-([^-]+)$");
+            
+            if (sceneMatchStart.Success)
+            {
+                SceneEntry.Text = sceneMatchStart.Groups[1].Value.Trim();
+                folderName = folderName.Substring(sceneMatchStart.Length);
+            }
+            else if (sceneMatchEnd.Success)
+            {
+                SceneEntry.Text = sceneMatchEnd.Groups[1].Value.Trim();
+                folderName = folderName.Substring(0, folderName.Length - sceneMatchEnd.Length);
+            }
+
+            // Dual Audio
+            if (lowerFolder.Contains("dual audio") || lowerFolder.Contains("dual-audio") || lowerFolder.Contains(".dual.") || lowerFolder.Contains(" dual "))
+            {
+                DualAudioCheckbox.IsChecked = true;
+            }
 
             // Resolution
             if (lowerFolder.Contains("2160p") || lowerFolder.Contains("4k")) SetComboBoxByContent(ResolutionCombobox, "2160p");
@@ -191,13 +183,13 @@ namespace MediaNamer
             else if (lowerFolder.Contains("bd") || lowerFolder.Contains("bluray")) SetComboBoxByContent(SourceCombobox, "BD Encode");
             else if (lowerFolder.Contains("dvd") && lowerFolder.Contains("remux")) SetComboBoxByContent(SourceCombobox, "DVD Remux");
             else if (lowerFolder.Contains("dvd")) SetComboBoxByContent(SourceCombobox, "DVD Encode");
-            else if (lowerFolder.Contains("web-dl") || lowerFolder.Contains("webdl")) SetComboBoxByContent(SourceCombobox, "WEB-DL");
+            else if (lowerFolder.Contains("web-dl") || lowerFolder.Contains("webdl") || lowerFolder.Contains(".web.")) SetComboBoxByContent(SourceCombobox, "WEB-DL");
             else if (lowerFolder.Contains("web-rip") || lowerFolder.Contains("webrip")) SetComboBoxByContent(SourceCombobox, "WEB-RIP");
 
             // Video Format
             if (lowerFolder.Contains("h.265") || lowerFolder.Contains("h265") || lowerFolder.Contains("x265") || lowerFolder.Contains("hevc")) SetComboBoxByContent(VideoFormatCombobox, "H.265");
             else if (lowerFolder.Contains("h.264") || lowerFolder.Contains("h264") || lowerFolder.Contains("x264") || lowerFolder.Contains("avc")) SetComboBoxByContent(VideoFormatCombobox, "H.264");
-            else if (lowerFolder.Contains("svt-av1")) SetComboBoxByContent(VideoFormatCombobox, "SVT-AV1"); // must check before AV1
+            else if (lowerFolder.Contains("svt-av1")) SetComboBoxByContent(VideoFormatCombobox, "SVT-AV1");
             else if (lowerFolder.Contains("av1")) SetComboBoxByContent(VideoFormatCombobox, "AV1");
 
             // Audio Format
@@ -205,13 +197,42 @@ namespace MediaNamer
             else if (lowerFolder.Contains("dts")) AudioFormatEntry.Text = "DTS";
             else if (lowerFolder.Contains("aac")) AudioFormatEntry.Text = "AAC";
             else if (lowerFolder.Contains("opus")) AudioFormatEntry.Text = "OPUS";
-            else if (lowerFolder.Contains("eac3")) AudioFormatEntry.Text = "EAC3";
+            else if (lowerFolder.Contains("eac3") || lowerFolder.Contains("ddp")) AudioFormatEntry.Text = "EAC3";
             else if (lowerFolder.Contains("ac3")) AudioFormatEntry.Text = "AC3";
 
-            // Dual Audio
-            if (lowerFolder.Contains("dual audio") || lowerFolder.Contains("dual-audio"))
+            // Extract Show Name and Season
+            string cleanName = Regex.Replace(folderName, @"\[.*?\]|\(.*?\)", "");
+            
+            // Convert periods to spaces for standard P2P releases
+            cleanName = cleanName.Replace(".", " ");
+
+            // Search for the Season identifier (e.g., S01 or Season 1)
+            var seasonMatch = Regex.Match(cleanName, @"(?i)\b(?:Season\s+|S)(\d+)\b");
+            if (seasonMatch.Success)
             {
-                DualAudioCheckbox.IsChecked = true;
+                SeasonEntry.Text = seasonMatch.Groups[1].Value.Trim();
+                // Everything before the season identifier is the show name
+                cleanName = cleanName.Substring(0, seasonMatch.Index);
+            }
+            else
+            {
+                // Fallback: Remove known tags manually if no Season identifier exists
+                string[] knownTags = { "2160p", "1080p", "800p", "720p", "480p", "4k", "repack", "cr", "web-dl", "webdl", "dual", "h 264", "h264", "x264", "avc", "h 265", "h265", "x265", "hevc", "svt-av1", "av1", "flac", "dts", "aac", "opus", "eac3", "ddp2 0", "ddp5 1", "ac3", "bluray", "bd", "remux", "web-rip", "webrip" };
+                foreach (string tag in knownTags)
+                {
+                    cleanName = Regex.Replace(cleanName, $@"(?i)\b{tag}\b", "");
+                }
+            }
+
+            cleanName = cleanName.Trim();
+            if (cleanName.EndsWith("-"))
+            {
+                cleanName = cleanName.Substring(0, cleanName.Length - 1).Trim();
+            }
+            
+            if (!string.IsNullOrEmpty(cleanName))
+            {
+                ShowNameEntry.Text = cleanName;
             }
         }
 
