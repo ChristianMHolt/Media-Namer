@@ -28,7 +28,10 @@
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto,Auto" Margin="10">
                 <!-- Row 0 -->
                 <TextBox Grid.Row="0" Grid.Column="0" x:Name="DirectoryEntry" IsEnabled="False" Text="Select Episode Directory Path"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="ShowNameEntry" Watermark="Enter show name:" ToolTip.Tip="The name of the show."/>
+                <Grid Grid.Row="0" Grid.Column="1" Margin="5,10" Width="200" HorizontalAlignment="Left">
+                    <TextBox x:Name="ShowNameEntry" Watermark="Enter show name:" ToolTip.Tip="The name of the show." Margin="0" Width="180" HorizontalAlignment="Left" TextChanged="ShowName_TextChanged"/>
+                    <Ellipse x:Name="ShowExistsLight" Width="12" Height="12" Fill="Gray" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip.Tip="Turns green if the show already exists in destination."/>
+                </Grid>
                 <ComboBox Grid.Row="0" Grid.Column="2" x:Name="SourceCombobox" ToolTip.Tip="e.g., BluRay, Disk, WEB-DL." SelectedIndex="1">
                     <ComboBoxItem>BD Remux</ComboBoxItem>
                     <ComboBoxItem>BD Encode</ComboBoxItem>
@@ -61,7 +64,7 @@
                     <ComboBoxItem>480p</ComboBoxItem>
                 </ComboBox>
                 <TextBox Grid.Row="2" Grid.Column="2" x:Name="AudioFormatEntry" Watermark="Enter Audio Format:" ToolTip.Tip="e.g., FLAC, DTS, OPUS, AAC."/>
-				<ComboBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" SelectedIndex="0" ToolTip.Tip="Select Media Type (TV, Anime, or Movie).">
+				<ComboBox Grid.Row="2" Grid.Column="3" x:Name="MediaTypeEntry" SelectedIndex="0" ToolTip.Tip="Select Media Type (TV, Anime, or Movie)." SelectionChanged="MediaType_SelectionChanged">
 					<ComboBoxItem Content="TV"/>
 					<ComboBoxItem Content="Anime"/>
 					<ComboBoxItem Content="Movie"/>

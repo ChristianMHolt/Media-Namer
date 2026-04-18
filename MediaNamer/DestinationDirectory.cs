@@ -31,6 +31,25 @@ namespace MediaNamer
             MediaPath = CreateMediaPath();
             SeasonPath = CreateSeasonPath(MediaDictionary);
 
+            if (!string.IsNullOrEmpty(BasePath) && !string.IsNullOrEmpty(MediaDictionary.ShowName))
+            {
+                string standardTag = $"[{MediaDictionary.Scene}][{MediaDictionary.Resolution}][{MediaDictionary.Source}][{MediaDictionary.VideoFormat}][{MediaDictionary.AudioFormat}]";
+
+                if (Directory.Exists(BasePath))
+                {
+                    var dirs = Directory.GetDirectories(BasePath, $"{MediaDictionary.ShowName} [*");
+                    if (dirs.Length > 0)
+                    {
+                        string existingDirName = Path.GetFileName(dirs[0]);
+                        MediaPath = existingDirName;
+                        if (!existingDirName.Contains(standardTag) && MediaDictionary.MediaType != "Movie")
+                        {
+                            SeasonPath += $" {standardTag}";
+                        }
+                    }
+                }
+            }
+
             DestinationDirectory = CreateDestinationDirectory();
         }
 
@@ -60,22 +79,18 @@ namespace MediaNamer
             return seasonPath;
         }
 
+        public static string GetBasePath(string mediaType)
+        {
+            if (mediaType == "TV") return @"X:\TV Shows";
+            if (mediaType == "Anime") return @"X:\Anime\Shows";
+            if (mediaType == "Movie") return @"X:\Movies";
+            return "";
+        }
+
         private string CreateNewBasePath()
         {
-            string basePath = "";
-            if (MediaType == "TV")
-            {
-                basePath = @"X:\TV Shows";
-            }
-            else if (MediaType == "Anime")
-            {
-                basePath = @"X:\Anime\Shows";
-            }
-            else if (MediaType == "Movie")
-            {
-                basePath = @"X:\Movies";
-            }
-            else
+            string basePath = GetBasePath(MediaType);
+            if (string.IsNullOrEmpty(basePath))
             {
                 Console.WriteLine("Error");
             }

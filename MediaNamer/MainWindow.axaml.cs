@@ -21,6 +21,47 @@ namespace MediaNamer
             Console.SetError(_terminalWriter);
         }
 
+        private void ShowName_TextChanged(object? sender, Avalonia.Controls.TextChangedEventArgs e)
+        {
+            UpdateShowExistsLight();
+        }
+
+        private void MediaType_SelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+        {
+            UpdateShowExistsLight();
+        }
+
+        private void UpdateShowExistsLight()
+        {
+            if (ShowExistsLight == null || ShowNameEntry == null || MediaTypeEntry == null) return;
+
+            string showName = ShowNameEntry.Text ?? "";
+            string mediaType = "";
+            if (MediaTypeEntry.SelectedItem is ComboBoxItem item)
+            {
+                mediaType = item.Content?.ToString() ?? "";
+            }
+
+            if (string.IsNullOrEmpty(showName) || string.IsNullOrEmpty(mediaType))
+            {
+                ShowExistsLight.Fill = Avalonia.Media.Brushes.Gray;
+                return;
+            }
+
+            string basePath = DestinationDirectoryClass.GetBasePath(mediaType);
+            if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+            {
+                var dirs = Directory.GetDirectories(basePath, $"{showName} [*");
+                if (dirs.Length > 0)
+                {
+                    ShowExistsLight.Fill = Avalonia.Media.Brushes.Green;
+                    return;
+                }
+            }
+
+            ShowExistsLight.Fill = Avalonia.Media.Brushes.Gray;
+        }
+
         private void SaveLabels()
         {
             _mediaDataDict.AudioFormat = AudioFormatEntry.Text ?? "";
@@ -131,7 +172,7 @@ namespace MediaNamer
             }
             else if (mode == "Rename")
             {
-                RenameFiles();
+                RenameFiles(destDirClass);
             }
             else if (mode == "Preview")
             {
@@ -158,15 +199,15 @@ namespace MediaNamer
             }
         }
 
-        private void RenameFiles()
+        private void RenameFiles(DestinationDirectoryClass destDirClass)
         {
             try
             {
                 var md = _mediaDataDict;
                 string showSourcePath = Path.GetDirectoryName(md.SourceDirectory);
                 string mediaSourcePath = Path.GetDirectoryName(showSourcePath);
-                string renamedShowSourcePath = Path.Combine(mediaSourcePath, $"{md.ShowName} [{md.Scene}][{md.Resolution}][{md.Source}][{md.VideoFormat}][{md.AudioFormat}]");
-                string seasonPath = DestinationDirectoryClass.CreateSeasonPath(md);
+                string renamedShowSourcePath = Path.Combine(mediaSourcePath, destDirClass.MediaPath);
+                string seasonPath = destDirClass.SeasonPath;
                 string newSourceDirectory = Path.Combine(showSourcePath, seasonPath);
 
                 for (int i = 0; i < Math.Min(md.SourceFiles.Count, md.FinalFiles.Count); i++)
