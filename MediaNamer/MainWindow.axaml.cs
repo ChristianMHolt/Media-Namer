@@ -74,6 +74,8 @@ namespace MediaNamer
 
             var destDirClass = new DestinationDirectoryClass(true, _mediaDataDict, mode);
             _mediaDataDict.DestinationDirectory = destDirClass.DestinationDirectory;
+            _mediaDataDict.MediaPath = destDirClass.MediaPath;
+            _mediaDataDict.SeasonPath = destDirClass.SeasonPath;
 
             var finalFilesClass = new FinalFileNamesClass(_mediaDataDict.DestinationDirectory, _mediaDataDict);
             _mediaDataDict.FinalFiles = finalFilesClass.FinalFileNames;
@@ -126,8 +128,8 @@ namespace MediaNamer
                 var md = _mediaDataDict;
                 string showSourcePath = Path.GetDirectoryName(md.SourceDirectory);
                 string mediaSourcePath = Path.GetDirectoryName(showSourcePath);
-                string renamedShowSourcePath = Path.Combine(mediaSourcePath, $"{md.ShowName} [{md.Scene}][{md.Resolution}][{md.Source}][{md.VideoFormat}][{md.AudioFormat}]");
-                string seasonPath = DestinationDirectoryClass.CreateSeasonPath(md);
+                string renamedShowSourcePath = Path.Combine(mediaSourcePath, md.MediaPath);
+                string seasonPath = md.SeasonPath;
                 string newSourceDirectory = Path.Combine(showSourcePath, seasonPath);
 
                 for (int i = 0; i < Math.Min(md.SourceFiles.Count, md.FinalFiles.Count); i++)
@@ -206,6 +208,41 @@ namespace MediaNamer
         private void Hardlink_Click(object sender, RoutedEventArgs e) => RunScript("Hardlink");
         private void Rename_Click(object sender, RoutedEventArgs e) => RunScript("Rename");
         private void Preview_Click(object sender, RoutedEventArgs e) => RunScript("Preview");
+
+        private void UpdateExistingShowLight(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            CheckExistingShowLight();
+        }
+
+        private void UpdateExistingShowLight(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+        {
+            CheckExistingShowLight();
+        }
+
+        private void UpdateExistingShowLight_TextChanged(object? sender, Avalonia.Controls.TextChangedEventArgs e)
+        {
+            CheckExistingShowLight();
+        }
+
+        private void CheckExistingShowLight()
+        {
+            var ExistingShowLight = this.FindControl<Avalonia.Controls.Shapes.Ellipse>("ExistingShowLight");
+            if (ExistingShowLight == null) return;
+            string mediaType = MediaTypeEntry?.Text ?? "";
+            string showName = ShowNameEntry?.Text ?? "";
+
+            string basePath = DestinationDirectoryClass.GetBasePath(mediaType);
+            string existingPath = DestinationDirectoryClass.FindExistingShowDirectory(basePath, showName);
+
+            if (!string.IsNullOrEmpty(existingPath))
+            {
+                ExistingShowLight.Fill = Avalonia.Media.Brushes.Green;
+            }
+            else
+            {
+                ExistingShowLight.Fill = Avalonia.Media.Brushes.Gray;
+            }
+        }
 
         // Custom TextWriter to redirect Console output to the TerminalOutput TextBox
         private class TextBoxWriter : TextWriter
