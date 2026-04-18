@@ -25,13 +25,76 @@ namespace MediaNamer
 
             if (basePathFlag)
             {
-                BasePath = CreateNewBasePath();
+                BasePath = GetBasePath(MediaType);
             }
 
             MediaPath = CreateMediaPath();
             SeasonPath = CreateSeasonPath(MediaDictionary);
 
+            EvaluateExistingShow();
+
             DestinationDirectory = CreateDestinationDirectory();
+        }
+
+        private void EvaluateExistingShow()
+        {
+            if (string.IsNullOrEmpty(BasePath) || !Directory.Exists(BasePath) || string.IsNullOrEmpty(MediaDictionary.ShowName))
+            {
+                return;
+            }
+
+            string existingPath = FindExistingShowDirectory(BasePath, MediaDictionary.ShowName);
+            if (!string.IsNullOrEmpty(existingPath))
+            {
+                string existingFolderName = Path.GetFileName(existingPath);
+
+                string newTags = "";
+                int bracketIndex = MediaPath.IndexOf(" [");
+                if (bracketIndex != -1)
+                {
+                    newTags = MediaPath.Substring(bracketIndex);
+                }
+
+                string existingTags = "";
+                int existingBracketIndex = existingFolderName.IndexOf(" [");
+                if (existingBracketIndex != -1)
+                {
+                    existingTags = existingFolderName.Substring(existingBracketIndex);
+                }
+
+                MediaPath = existingFolderName;
+
+                if (MediaType != "Movie" && !string.IsNullOrEmpty(newTags) && newTags != existingTags)
+                {
+                    SeasonPath += newTags;
+                }
+            }
+        }
+
+        public static string FindExistingShowDirectory(string basePath, string showName)
+        {
+            if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath) || string.IsNullOrEmpty(showName))
+            {
+                return "";
+            }
+
+            try
+            {
+                var directories = Directory.GetDirectories(basePath);
+                foreach (var dir in directories)
+                {
+                    string dirName = Path.GetFileName(dir);
+                    if (dirName == showName || dirName.StartsWith(showName + " ["))
+                    {
+                        return dir;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error finding existing show directory: {ex.Message}");
+            }
+            return "";
         }
 
         public static string CreateSeasonPath(MediaDictionary md)
@@ -60,18 +123,18 @@ namespace MediaNamer
             return seasonPath;
         }
 
-        private string CreateNewBasePath()
+        public static string GetBasePath(string mediaType)
         {
             string basePath = "";
-            if (MediaType == "TV")
+            if (mediaType == "TV")
             {
                 basePath = @"X:\TV Shows";
             }
-            else if (MediaType == "Anime")
+            else if (mediaType == "Anime")
             {
                 basePath = @"X:\Anime\Shows";
             }
-            else if (MediaType == "Movie")
+            else if (mediaType == "Movie")
             {
                 basePath = @"X:\Movies";
             }

@@ -28,7 +28,10 @@
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto,Auto" Margin="10">
                 <!-- Row 0 -->
                 <TextBox Grid.Row="0" Grid.Column="0" x:Name="DirectoryEntry" IsEnabled="False" Text="Select Episode Directory Path"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="ShowNameEntry" Watermark="Enter show name:" ToolTip.Tip="The name of the show."/>
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                    <TextBox x:Name="ShowNameEntry" Watermark="Enter show name:" ToolTip.Tip="The name of the show." TextChanged="UpdateExistingShowLight_TextChanged" Width="175"/>
+                    <Ellipse x:Name="ExistingShowLight" Width="15" Height="15" Fill="Gray" Margin="5,0,5,0" VerticalAlignment="Center" ToolTip.Tip="Green if a matching show already exists."/>
+                </StackPanel>
                 <ComboBox Grid.Row="0" Grid.Column="2" x:Name="SourceCombobox" ToolTip.Tip="e.g., BluRay, Disk, WEB-DL." SelectedIndex="1">
                     <ComboBoxItem>BD Remux</ComboBoxItem>
                     <ComboBoxItem>BD Encode</ComboBoxItem>

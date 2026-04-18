@@ -21,6 +21,45 @@ namespace MediaNamer
             Console.SetError(_terminalWriter);
         }
 
+        private void UpdateExistingShowLight_TextChanged(object? sender, Avalonia.Controls.TextChangedEventArgs e)
+        {
+            UpdateExistingShowLight();
+        }
+
+        private void MediaType_SelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+        {
+            UpdateExistingShowLight();
+        }
+
+        private void UpdateExistingShowLight()
+        {
+            // Now correctly references ExistingShowLight
+            if (ExistingShowLight == null || ShowNameEntry == null || MediaTypeEntry == null) return;
+
+            string showName = ShowNameEntry.Text ?? "";
+            
+            string mediaType = (MediaTypeEntry.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+
+            if (string.IsNullOrEmpty(showName) || string.IsNullOrEmpty(mediaType))
+            {
+                ExistingShowLight.Fill = Avalonia.Media.Brushes.Gray;
+                return;
+            }
+
+            string basePath = DestinationDirectoryClass.GetBasePath(mediaType);
+            if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+            {
+                var dirs = Directory.GetDirectories(basePath, $"{showName} [*");
+                if (dirs.Length > 0)
+                {
+                    ExistingShowLight.Fill = Avalonia.Media.Brushes.Green;
+                    return;
+                }
+            }
+
+            ExistingShowLight.Fill = Avalonia.Media.Brushes.Gray;
+        }
+
         private void SaveLabels()
         {
             _mediaDataDict.AudioFormat = AudioFormatEntry.Text ?? "";
@@ -31,68 +70,63 @@ namespace MediaNamer
             _mediaDataDict.EpisodeOffset = EpisodeOffsetEntry.Text ?? "0";
             _mediaDataDict.ShowName = ShowNameEntry.Text ?? "";
             _mediaDataDict.Season = SeasonEntry.Text ?? "";
-			if (MediaTypeEntry.SelectedItem is ComboBoxItem item)
-			{
-				_mediaDataDict.MediaType = item.Content?.ToString() ?? "";
-			}
+            
+            // FIX: Single line extraction
+            _mediaDataDict.MediaType = (MediaTypeEntry.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
 
             _mediaDataDict.DualAudio = DualAudioCheckbox.IsChecked == true ? "Dual Audio" : "";
         }
 
-		private async void SelectDirectory_Click(object sender, RoutedEventArgs e)
-		{
-			var topLevel = TopLevel.GetTopLevel(this);
-			if (topLevel == null) return;
+        private async void SelectDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel == null) return;
 
-			// Extract the string content from the selected ComboBoxItem
-			string mediaType = "";
-			if (MediaTypeEntry.SelectedItem is ComboBoxItem item)
-			{
-				mediaType = item.Content?.ToString()?.ToLower() ?? "";
-			}
+            // FIX: Single line extraction, converted to lower case for the logic below
+            string mediaType = (MediaTypeEntry.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() ?? "";
 
-			string suggestedPath = @"X:\SeedingTorrents"; // Fallback
+            string suggestedPath = @"X:\SeedingTorrents"; // Fallback
 
-			if (mediaType == "tv")
-			{
-				suggestedPath = @"X:\SeedingTorrents\TV Shows";
-			}
-			else if (mediaType == "anime")
-			{
-				suggestedPath = @"X:\SeedingTorrents\Anime";
-			}
-			else if (mediaType == "movie")
-			{
-				suggestedPath = @"X:\SeedingTorrents\Movies";
-			}
+            if (mediaType == "tv")
+            {
+                suggestedPath = @"X:\SeedingTorrents\TV Shows";
+            }
+            else if (mediaType == "anime")
+            {
+                suggestedPath = @"X:\SeedingTorrents\Anime";
+            }
+            else if (mediaType == "movie")
+            {
+                suggestedPath = @"X:\SeedingTorrents\Movies";
+            }
 
-			IStorageFolder? startLocation = null;
-			try 
-			{
-				if (Directory.Exists(suggestedPath))
-				{
-					startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(suggestedPath);
-				}
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Could not access path: {ex.Message}");
-			}
+            IStorageFolder? startLocation = null;
+            try 
+            {
+                if (Directory.Exists(suggestedPath))
+                {
+                    startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(suggestedPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Could not access path: {ex.Message}");
+            }
 
-			var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-			{
-				Title = "Select Episode Directory",
-				SuggestedStartLocation = startLocation
-			});
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select Episode Directory",
+                SuggestedStartLocation = startLocation
+            });
 
-			if (folders.Count >= 1)
-			{
-				string path = folders[0].Path.LocalPath;
-				DirectoryEntry.Text = path;
-				_mediaDataDict.SourceDirectory = path;
-				Console.WriteLine(path);
-			}
-		}
+            if (folders.Count >= 1)
+            {
+                string path = folders[0].Path.LocalPath;
+                DirectoryEntry.Text = path;
+                _mediaDataDict.SourceDirectory = path;
+                Console.WriteLine(path);
+            }
+        }
 
         private void InputEpisodeNames_Click(object sender, RoutedEventArgs e)
         {
@@ -131,7 +165,7 @@ namespace MediaNamer
             }
             else if (mode == "Rename")
             {
-                RenameFiles();
+                RenameFiles(destDirClass);
             }
             else if (mode == "Preview")
             {
@@ -158,15 +192,15 @@ namespace MediaNamer
             }
         }
 
-        private void RenameFiles()
+        private void RenameFiles(DestinationDirectoryClass destDirClass)
         {
             try
             {
                 var md = _mediaDataDict;
                 string showSourcePath = Path.GetDirectoryName(md.SourceDirectory);
                 string mediaSourcePath = Path.GetDirectoryName(showSourcePath);
-                string renamedShowSourcePath = Path.Combine(mediaSourcePath, $"{md.ShowName} [{md.Scene}][{md.Resolution}][{md.Source}][{md.VideoFormat}][{md.AudioFormat}]");
-                string seasonPath = DestinationDirectoryClass.CreateSeasonPath(md);
+                string renamedShowSourcePath = Path.Combine(mediaSourcePath, destDirClass.MediaPath);
+                string seasonPath = destDirClass.SeasonPath;
                 string newSourceDirectory = Path.Combine(showSourcePath, seasonPath);
 
                 for (int i = 0; i < Math.Min(md.SourceFiles.Count, md.FinalFiles.Count); i++)
@@ -206,9 +240,6 @@ namespace MediaNamer
                     }
                     else
                     {
-                        // In modern .NET, File.CreateSymbolicLink is available but we need hardlinks.
-                        // .NET doesn't have a built-in cross-platform CreateHardLink API until later versions or we can use POSIX link.
-                        // However, assuming Windows as primary platform based on original script paths (X:\).
                         Console.WriteLine("Hardlinking is only fully supported on Windows in this implementation.");
                     }
                 }
@@ -246,7 +277,6 @@ namespace MediaNamer
         private void Rename_Click(object sender, RoutedEventArgs e) => RunScript("Rename");
         private void Preview_Click(object sender, RoutedEventArgs e) => RunScript("Preview");
 
-        // Custom TextWriter to redirect Console output to the TerminalOutput TextBox
         private class TextBoxWriter : TextWriter
         {
             private TextBox _textBox;
