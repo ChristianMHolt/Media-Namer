@@ -18,6 +18,8 @@ namespace MediaNamer
         public string SourceDirectory { get; set; } = string.Empty;
         public string DestinationDirectory { get; set; } = string.Empty;
         public string DualAudio { get; set; } = string.Empty;
+        public string MediaPath { get; set; } = string.Empty;
+        public string SeasonPath { get; set; } = string.Empty;
 
         public List<string> EpisodeList { get; set; } = new List<string>();
         public List<string> FinalFiles { get; set; } = new List<string>();
