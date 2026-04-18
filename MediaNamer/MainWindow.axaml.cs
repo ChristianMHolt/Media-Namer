@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MediaNamer
 {
@@ -125,6 +126,106 @@ namespace MediaNamer
                 DirectoryEntry.Text = path;
                 _mediaDataDict.SourceDirectory = path;
                 Console.WriteLine(path);
+
+                ParseTagsFromDirectory(path);
+            }
+        }
+
+        private void ParseTagsFromDirectory(string dirPath)
+        {
+            string folderName = Path.GetFileName(dirPath);
+            if (string.IsNullOrEmpty(folderName)) return;
+
+            // Reset UI fields before processing
+            SceneEntry.Text = "";
+            ShowNameEntry.Text = "";
+            SeasonEntry.Text = "";
+            AudioFormatEntry.Text = "";
+            DualAudioCheckbox.IsChecked = false;
+
+            ResolutionCombobox.SelectedIndex = -1;
+            SourceCombobox.SelectedIndex = -1;
+            VideoFormatCombobox.SelectedIndex = -1;
+
+            // Extract Scene if present in the beginning like [Scene]
+            var sceneMatch = Regex.Match(folderName, @"^\[(.*?)\]");
+            if (sceneMatch.Success)
+            {
+                SceneEntry.Text = sceneMatch.Groups[1].Value.Trim();
+            }
+
+            // Extract Show Name
+            // Remove everything in [] and ()
+            string cleanName = Regex.Replace(folderName, @"\[.*?\]|\(.*?\)", "");
+
+            // Look for Season info
+            var seasonMatch = Regex.Match(cleanName, @"(?i)(?:Season\s+|S)(\d+)");
+            if (seasonMatch.Success)
+            {
+                SeasonEntry.Text = seasonMatch.Groups[1].Value.Trim();
+                cleanName = cleanName.Replace(seasonMatch.Value, ""); // remove season from showname
+            }
+
+            // Clean up name
+            cleanName = cleanName.Trim();
+            if (cleanName.EndsWith("-"))
+            {
+                cleanName = cleanName.Substring(0, cleanName.Length - 1).Trim();
+            }
+            if (!string.IsNullOrEmpty(cleanName))
+            {
+                ShowNameEntry.Text = cleanName;
+            }
+
+            string lowerFolder = folderName.ToLower();
+
+            // Resolution
+            if (lowerFolder.Contains("2160p") || lowerFolder.Contains("4k")) SetComboBoxByContent(ResolutionCombobox, "2160p");
+            else if (lowerFolder.Contains("1080p")) SetComboBoxByContent(ResolutionCombobox, "1080p");
+            else if (lowerFolder.Contains("800p")) SetComboBoxByContent(ResolutionCombobox, "800p");
+            else if (lowerFolder.Contains("720p")) SetComboBoxByContent(ResolutionCombobox, "720p");
+            else if (lowerFolder.Contains("480p")) SetComboBoxByContent(ResolutionCombobox, "480p");
+
+            // Source
+            if (lowerFolder.Contains("bd") && lowerFolder.Contains("remux")) SetComboBoxByContent(SourceCombobox, "BD Remux");
+            else if (lowerFolder.Contains("bd") || lowerFolder.Contains("bluray")) SetComboBoxByContent(SourceCombobox, "BD Encode");
+            else if (lowerFolder.Contains("dvd") && lowerFolder.Contains("remux")) SetComboBoxByContent(SourceCombobox, "DVD Remux");
+            else if (lowerFolder.Contains("dvd")) SetComboBoxByContent(SourceCombobox, "DVD Encode");
+            else if (lowerFolder.Contains("web-dl") || lowerFolder.Contains("webdl")) SetComboBoxByContent(SourceCombobox, "WEB-DL");
+            else if (lowerFolder.Contains("web-rip") || lowerFolder.Contains("webrip")) SetComboBoxByContent(SourceCombobox, "WEB-RIP");
+
+            // Video Format
+            if (lowerFolder.Contains("h.265") || lowerFolder.Contains("h265") || lowerFolder.Contains("x265") || lowerFolder.Contains("hevc")) SetComboBoxByContent(VideoFormatCombobox, "H.265");
+            else if (lowerFolder.Contains("h.264") || lowerFolder.Contains("h264") || lowerFolder.Contains("x264") || lowerFolder.Contains("avc")) SetComboBoxByContent(VideoFormatCombobox, "H.264");
+            else if (lowerFolder.Contains("svt-av1")) SetComboBoxByContent(VideoFormatCombobox, "SVT-AV1"); // must check before AV1
+            else if (lowerFolder.Contains("av1")) SetComboBoxByContent(VideoFormatCombobox, "AV1");
+
+            // Audio Format
+            if (lowerFolder.Contains("flac")) AudioFormatEntry.Text = "FLAC";
+            else if (lowerFolder.Contains("dts")) AudioFormatEntry.Text = "DTS";
+            else if (lowerFolder.Contains("aac")) AudioFormatEntry.Text = "AAC";
+            else if (lowerFolder.Contains("opus")) AudioFormatEntry.Text = "OPUS";
+            else if (lowerFolder.Contains("eac3")) AudioFormatEntry.Text = "EAC3";
+            else if (lowerFolder.Contains("ac3")) AudioFormatEntry.Text = "AC3";
+
+            // Dual Audio
+            if (lowerFolder.Contains("dual audio") || lowerFolder.Contains("dual-audio"))
+            {
+                DualAudioCheckbox.IsChecked = true;
+            }
+        }
+
+        private void SetComboBoxByContent(ComboBox comboBox, string content)
+        {
+            if (comboBox == null || comboBox.Items == null) return;
+            for (int i = 0; i < comboBox.Items.Count; i++)
+            {
+                var item = comboBox.Items[i] as ComboBoxItem;
+                if (item != null && item.Content?.ToString() == content)
+                {
+                    comboBox.SelectedIndex = i;
+                    break;
+                }
             }
         }
 
