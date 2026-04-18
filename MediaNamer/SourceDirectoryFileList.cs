@@ -29,7 +29,10 @@ namespace MediaNamer
             List<string> files = new List<string>();
             try
             {
-                foreach (string filePath in Directory.GetFiles(seedingFolderPath))
+                // Retrieve all files, then explicitly sort them alphabetically
+                var sortedFiles = Directory.GetFiles(seedingFolderPath).OrderBy(f => f).ToList();
+
+                foreach (string filePath in sortedFiles)
                 {
                     string extension = Path.GetExtension(filePath);
                     if (allowedExtensions.Contains(extension))

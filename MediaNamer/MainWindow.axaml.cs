@@ -364,7 +364,7 @@ namespace MediaNamer
             }
         }
 
-        [System.Runtime.InteropServices.DllImport("Kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        [System.Runtime.InteropServices.DllImport("Kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
         private static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
         private void HardlinkFiles()
@@ -375,10 +375,18 @@ namespace MediaNamer
                 {
                     if (OperatingSystem.IsWindows())
                     {
-                        bool success = CreateHardLink(_mediaDataDict.FinalFiles[i], _mediaDataDict.SourceFiles[i], IntPtr.Zero);
+                        string finalFile = _mediaDataDict.FinalFiles[i];
+                        string sourceFile = _mediaDataDict.SourceFiles[i];
+
+                        // Prepend \\?\ to bypass the 260 character MAX_PATH limitation
+                        string formattedFinal = finalFile.StartsWith(@"\\?\") ? finalFile : @"\\?\" + finalFile;
+                        string formattedSource = sourceFile.StartsWith(@"\\?\") ? sourceFile : @"\\?\" + sourceFile;
+
+                        bool success = CreateHardLink(formattedFinal, formattedSource, IntPtr.Zero);
                         if (!success)
                         {
-                            Console.WriteLine($"Failed to create hard link for {_mediaDataDict.FinalFiles[i]}");
+                            int errorCode = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                            Console.WriteLine($"Failed to create hard link for {_mediaDataDict.FinalFiles[i]} (Error Code: {errorCode})");
                         }
                     }
                     else

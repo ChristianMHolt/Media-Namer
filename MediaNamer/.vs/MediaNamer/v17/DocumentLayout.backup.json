@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:MainWindow.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Software\\Media-Namer-CSharp\\MediaNamer\\SourceDirectoryFileList.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:SourceDirectoryFileList.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Software\\Media-Namer-CSharp\\MediaNamer\\MainWindow.axaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:MainWindow.axaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     },
@@ -22,8 +26,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SourceDirectoryFileList.cs",
+              "DocumentMoniker": "E:\\Software\\Media-Namer-CSharp\\MediaNamer\\SourceDirectoryFileList.cs",
+              "RelativeDocumentMoniker": "SourceDirectoryFileList.cs",
+              "ToolTip": "E:\\Software\\Media-Namer-CSharp\\MediaNamer\\SourceDirectoryFileList.cs",
+              "RelativeToolTip": "SourceDirectoryFileList.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-18T22:50:30.18Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -32,14 +49,14 @@
               "RelativeDocumentMoniker": "MainWindow.axaml.cs",
               "ToolTip": "E:\\Software\\Media-Namer-CSharp\\MediaNamer\\MainWindow.axaml.cs",
               "RelativeToolTip": "MainWindow.axaml.cs",
-              "ViewState": "AgIAAN8AAAAAAAAAAAAAwP8AAABDAAAAAAAAAA==",
+              "ViewState": "AgIAAFsBAAAAAAAAAAAqwJIBAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-18T22:25:52.375Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "MainWindow.axaml",
               "DocumentMoniker": "E:\\Software\\Media-Namer-CSharp\\MediaNamer\\MainWindow.axaml",
               "RelativeDocumentMoniker": "MainWindow.axaml",
@@ -47,12 +64,11 @@
               "RelativeToolTip": "MainWindow.axaml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-04-18T22:25:49.797Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-18T22:25:49.797Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "EpisodeExtractorWindow.axaml.cs",
               "DocumentMoniker": "E:\\Software\\Media-Namer-CSharp\\MediaNamer\\EpisodeExtractorWindow.axaml.cs",
               "RelativeDocumentMoniker": "EpisodeExtractorWindow.axaml.cs",
@@ -60,8 +76,7 @@
               "RelativeToolTip": "EpisodeExtractorWindow.axaml.cs",
               "ViewState": "AgIAAIQAAAAAAAAAAADgv6UAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T22:25:13.263Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-18T22:25:13.263Z"
             }
           ]
         }
