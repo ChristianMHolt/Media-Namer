@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace MediaNamer
 {
@@ -125,6 +126,64 @@ namespace MediaNamer
                 Console.WriteLine(path);
 
                 ParseTagsFromDirectory(path);
+                await BackfillMissingInfoFromMkvAsync(path);
+            }
+        }
+
+        // After the folder-name parse, fill any container-derivable field it left blank by
+        // probing the first .mkv with mkvinfo. Name-based values always win; this only fills gaps.
+        private async Task BackfillMissingInfoFromMkvAsync(string dirPath)
+        {
+            try
+            {
+                bool needRes = ResolutionCombobox.SelectedIndex == -1;
+                bool needVideo = VideoFormatCombobox.SelectedIndex == -1;
+                bool needAudio = string.IsNullOrEmpty(AudioFormatEntry.Text);
+                bool needDual = DualAudioCheckbox.IsChecked != true;
+
+                if (!needRes && !needVideo && !needAudio && !needDual)
+                    return; // nothing missing; don't bother running mkvinfo
+
+                string? firstMkv = MkvInfoProbe.FindFirstMkv(dirPath);
+                if (firstMkv == null)
+                {
+                    Console.WriteLine("[mkvinfo] No .mkv file to backfill from; skipping.");
+                    return;
+                }
+
+                Console.WriteLine($"\n--- mkvinfo Backfill ---");
+                Console.WriteLine($"Probing: {Path.GetFileName(firstMkv)}");
+
+                var probe = await MkvInfoProbe.ProbeAsync(firstMkv);
+                if (probe == null)
+                    return; // ProbeAsync already logged the reason
+
+                if (needRes && probe.Resolution != null)
+                {
+                    SetComboBoxByContent(ResolutionCombobox, probe.Resolution);
+                    Console.WriteLine($"Resolution (mkvinfo): {probe.Resolution}");
+                }
+                if (needVideo && probe.VideoFormat != null)
+                {
+                    SetComboBoxByContent(VideoFormatCombobox, probe.VideoFormat);
+                    Console.WriteLine($"Video (mkvinfo): {probe.VideoFormat}");
+                }
+                if (needAudio && probe.AudioFormat != null)
+                {
+                    AudioFormatEntry.Text = probe.AudioFormat;
+                    Console.WriteLine($"Audio (mkvinfo): {probe.AudioFormat}");
+                }
+                if (needDual && probe.IsDualAudio)
+                {
+                    DualAudioCheckbox.IsChecked = true; // fires DualAudio_Changed -> updates the dict
+                    Console.WriteLine("Dual Audio (mkvinfo): Yes");
+                }
+
+                Console.WriteLine($"--- mkvinfo Complete ---\n");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[mkvinfo Error] {ex.Message}");
             }
         }
 
