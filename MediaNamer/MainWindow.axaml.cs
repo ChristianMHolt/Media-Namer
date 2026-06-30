@@ -377,8 +377,7 @@ namespace MediaNamer
         private void InputEpisodeNames_Click(object sender, RoutedEventArgs e)
         {
             SaveLabels();
-            bool reverseEpisodeOrder = FlippedCheckbox.IsChecked ?? false;
-            var window = new EpisodeExtractorWindow(_mediaDataDict, _mediaDataDict.ShowName, _mediaDataDict.Season, reverseEpisodeOrder);
+            var window = new EpisodeExtractorWindow(_mediaDataDict, _mediaDataDict.ShowName, _mediaDataDict.Season);
             window.Show();
         }
 
@@ -533,30 +532,66 @@ namespace MediaNamer
 
         private class TextBoxWriter : TextWriter
         {
-            private TextBox _textBox;
+            private readonly TextBox _textBox;
+            private readonly StringBuilder _buffer = new StringBuilder();
+            private readonly object _lock = new object();
+            private readonly DispatcherTimer _flushTimer;
 
             public TextBoxWriter(TextBox textBox)
             {
                 _textBox = textBox;
+                // Coalesce writes: drain the buffer to the TextBox on a short cadence so the
+                // box re-renders a few times per second instead of once per character/line.
+                _flushTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(30), DispatcherPriority.Background, Flush);
+                _flushTimer.Start();
+            }
+
+            private void Flush(object? sender, EventArgs e)
+            {
+                string pending;
+                lock (_lock)
+                {
+                    if (_buffer.Length == 0)
+                        return;
+                    pending = _buffer.ToString();
+                    _buffer.Clear();
+                }
+
+                _textBox.Text += pending;
+                _textBox.CaretIndex = _textBox.Text?.Length ?? 0;
             }
 
             public override void Write(char value)
             {
-                Dispatcher.UIThread.Post(() => {
-                    _textBox.Text += value;
-                    _textBox.CaretIndex = _textBox.Text?.Length ?? 0;
-                });
+                lock (_lock) { _buffer.Append(value); }
             }
 
             public override void Write(string? value)
             {
                 if (value != null)
                 {
-                    Dispatcher.UIThread.Post(() => {
-                        _textBox.Text += value;
-                        _textBox.CaretIndex = _textBox.Text?.Length ?? 0;
-                    });
+                    lock (_lock) { _buffer.Append(value); }
                 }
+            }
+
+            public override void Write(char[] buffer, int index, int count)
+            {
+                if (buffer == null) return;
+                lock (_lock) { _buffer.Append(buffer, index, count); }
+            }
+
+            public override void WriteLine(string? value)
+            {
+                lock (_lock)
+                {
+                    if (value != null) _buffer.Append(value);
+                    _buffer.Append(CoreNewLine);
+                }
+            }
+
+            public override void WriteLine()
+            {
+                lock (_lock) { _buffer.Append(CoreNewLine); }
             }
 
             public override Encoding Encoding => Encoding.UTF8;

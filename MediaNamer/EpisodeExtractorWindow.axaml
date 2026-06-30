@@ -21,6 +21,9 @@
         <TextBlock Grid.Row="4" Text="Comma-delimited output:" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
         <TextBox Grid.Row="5" x:Name="OutputText" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,10"/>
 
-        <Button Grid.Row="6" Content="Use Manual Episode Names" Click="UseManualEpisodeNames_Click" Background="#2196F3" Foreground="White" HorizontalAlignment="Left"/>
+        <StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="10">
+            <Button Content="Use Manual Episode Names" Click="UseManualEpisodeNames_Click" Background="#2196F3" Foreground="White" HorizontalAlignment="Left"/>
+            <Button Content="Reverse Order" Click="ReverseOrder_Click" Background="#2196F3" Foreground="White" HorizontalAlignment="Left"/>
+        </StackPanel>
     </Grid>
 </Window>

@@ -13,20 +13,18 @@ namespace MediaNamer
         public MediaDictionary MediaDataDict { get; set; }
         public string ShowName { get; set; }
         public string Season { get; set; }
-        public bool ReverseEpisodeOrder { get; set; }
 
         public EpisodeExtractorWindow()
         {
             InitializeComponent();
         }
 
-        public EpisodeExtractorWindow(MediaDictionary mediaDataDict, string showName, string season, bool reverseEpisodeOrder)
+        public EpisodeExtractorWindow(MediaDictionary mediaDataDict, string showName, string season)
         {
             InitializeComponent();
             MediaDataDict = mediaDataDict;
             ShowName = showName;
             Season = season;
-            ReverseEpisodeOrder = reverseEpisodeOrder;
         }
 
         private void ProcessAndSave_Click(object sender, RoutedEventArgs e)
@@ -45,11 +43,6 @@ namespace MediaNamer
                         titles.Add(safe);
                     }
                 }
-            }
-
-            if (!ReverseEpisodeOrder)
-            {
-                titles.Reverse();
             }
 
             UpdateEpisodeList(titles);
@@ -77,6 +70,31 @@ namespace MediaNamer
             }
         }
 
+        private void ReverseOrder_Click(object sender, RoutedEventArgs e)
+        {
+            var rawText = OutputText.Text ?? string.Empty;
+            var titles = rawText.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToList();
+
+            titles.Reverse();
+
+            UpdateEpisodeList(titles);
+            OutputText.Text = string.Join(",", titles);
+
+            if (titles.Count > 0)
+            {
+                CountLabel.Text = $"Episodes: {titles.Count}";
+                CountLabel.Foreground = Brushes.Green;
+            }
+            else
+            {
+                CountLabel.Text = "Episodes extracted: 0";
+                CountLabel.Foreground = Brushes.Red;
+            }
+        }
+
         private async void FetchEpisodeNamesOnline_Click(object sender, RoutedEventArgs e)
         {
             string showName = GetShowName();
@@ -94,11 +112,6 @@ namespace MediaNamer
                 {
                     SetStatusError($"No episodes found for {showName} season {seasonNumber.Value}.");
                     return;
-                }
-
-                if (!ReverseEpisodeOrder)
-                {
-                    titles.Reverse();
                 }
 
                 UpdateEpisodeList(titles);
