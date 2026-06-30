@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -206,7 +207,6 @@ namespace MediaNamer
                 DualAudioCheckbox.IsChecked = false;
 
                 ResolutionCombobox.SelectedIndex = -1;
-                SourceCombobox.SelectedIndex = -1;
                 VideoFormatCombobox.SelectedIndex = -1;
 
                 string lowerFolder = folderName.ToLower();
@@ -242,13 +242,33 @@ namespace MediaNamer
                 else if (lowerFolder.Contains("720p")) { SetComboBoxByContent(ResolutionCombobox, "720p"); Console.WriteLine("Resolution: 720p"); }
                 else if (lowerFolder.Contains("480p")) { SetComboBoxByContent(ResolutionCombobox, "480p"); Console.WriteLine("Resolution: 480p"); }
 
-                // Source
-                if (lowerFolder.Contains("bd") && lowerFolder.Contains("remux")) { SetComboBoxByContent(SourceCombobox, "BD Remux"); Console.WriteLine("Source: BD Remux"); }
-                else if (lowerFolder.Contains("bd") || lowerFolder.Contains("bluray")) { SetComboBoxByContent(SourceCombobox, "BD Encode"); Console.WriteLine("Source: BD Encode"); }
-                else if (lowerFolder.Contains("dvd") && lowerFolder.Contains("remux")) { SetComboBoxByContent(SourceCombobox, "DVD Remux"); Console.WriteLine("Source: DVD Remux"); }
-                else if (lowerFolder.Contains("dvd")) { SetComboBoxByContent(SourceCombobox, "DVD Encode"); Console.WriteLine("Source: DVD Encode"); }
-                else if (lowerFolder.Contains("web-dl") || lowerFolder.Contains("webdl") || lowerFolder.Contains(".web.")) { SetComboBoxByContent(SourceCombobox, "WEB-DL"); Console.WriteLine("Source: WEB-DL"); }
-                else if (lowerFolder.Contains("web-rip") || lowerFolder.Contains("webrip")) { SetComboBoxByContent(SourceCombobox, "WEB-RIP"); Console.WriteLine("Source: WEB-RIP"); }
+                // Source — check WEB patterns first; "webdl" contains "bd" as a substring,
+                // so the short BD/DVD tokens must come AFTER the longer, more-specific ones.
+                bool sourceDetected = false;
+
+                if (HasTag(lowerFolder, "web-dl") || HasTag(lowerFolder, "webdl")) { SetComboBoxByContent(SourceCombobox, "WEB-DL"); Console.WriteLine("Source: WEB-DL"); sourceDetected = true; }
+                else if (HasTag(lowerFolder, "web-rip") || HasTag(lowerFolder, "webrip")) { SetComboBoxByContent(SourceCombobox, "WEB-RIP"); Console.WriteLine("Source: WEB-RIP"); sourceDetected = true; }
+                else if (HasTag(lowerFolder, "web")) { SetComboBoxByContent(SourceCombobox, "WEB-DL"); Console.WriteLine("Source: WEB-DL"); sourceDetected = true; }
+                else if ((HasTag(lowerFolder, "bd") || HasTag(lowerFolder, "bluray")) && HasTag(lowerFolder, "remux")) { SetComboBoxByContent(SourceCombobox, "BD Remux"); Console.WriteLine("Source: BD Remux"); sourceDetected = true; }
+                else if (HasTag(lowerFolder, "bd") || HasTag(lowerFolder, "bluray")) { SetComboBoxByContent(SourceCombobox, "BD Encode"); Console.WriteLine("Source: BD Encode"); sourceDetected = true; }
+                else if (HasTag(lowerFolder, "dvd") && HasTag(lowerFolder, "remux")) { SetComboBoxByContent(SourceCombobox, "DVD Remux"); Console.WriteLine("Source: DVD Remux"); sourceDetected = true; }
+                else if (HasTag(lowerFolder, "dvd")) { SetComboBoxByContent(SourceCombobox, "DVD Encode"); Console.WriteLine("Source: DVD Encode"); sourceDetected = true; }
+
+                // Remux-only fallback: folder says "remux" but no source tag — infer from file size
+                if (!sourceDetected && HasTag(lowerFolder, "remux"))
+                {
+                    double avgGb = GetAverageEpisodeSizeGb(dirPath);
+                    if (avgGb >= 5.0)
+                    {
+                        SetComboBoxByContent(SourceCombobox, "BD Remux");
+                        Console.WriteLine($"Source (size-inferred): BD Remux (avg {avgGb:F1} GB)");
+                    }
+                    else
+                    {
+                        SetComboBoxByContent(SourceCombobox, "BD Encode");
+                        Console.WriteLine($"Source (size-inferred): BD Encode (avg {avgGb:F1} GB)");
+                    }
+                }
 
                 // Video Format
                 if (lowerFolder.Contains("h.265") || lowerFolder.Contains("h265") || lowerFolder.Contains("x265") || lowerFolder.Contains("hevc")) { SetComboBoxByContent(VideoFormatCombobox, "H.265"); Console.WriteLine("Video: H.265"); }
@@ -328,6 +348,30 @@ namespace MediaNamer
                 }
             }
             Console.WriteLine($"[Warning] Could not match combobox tag for: {content}");
+        }
+
+        /// <summary>Matches a tag as a standalone token using \b word boundaries so that
+        /// short tokens like "bd" don't false-match inside longer words like "webdl".</summary>
+        private static bool HasTag(string text, string tag)
+        {
+            return Regex.IsMatch(text, $@"\b{Regex.Escape(tag)}\b", RegexOptions.IgnoreCase);
+        }
+
+        /// <summary>Average size in GB of .mkv / .mp4 files in the directory.</summary>
+        private static double GetAverageEpisodeSizeGb(string dirPath)
+        {
+            try
+            {
+                var files = Directory.GetFiles(dirPath)
+                    .Where(f => { string e = Path.GetExtension(f).ToLowerInvariant(); return e == ".mkv" || e == ".mp4"; })
+                    .ToList();
+                if (files.Count == 0) return 0;
+                return files.Average(f => new FileInfo(f).Length) / (1024.0 * 1024.0 * 1024.0);
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         private void InputEpisodeNames_Click(object sender, RoutedEventArgs e)
