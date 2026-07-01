@@ -181,7 +181,10 @@ namespace MediaNamer
                 Console.WriteLine($"\n--- mkvinfo Backfill ---");
                 Console.WriteLine($"Probing: {Path.GetFileName(firstMkv)}");
 
-                var probe = await MkvInfoProbe.ProbeAsync(firstMkv, _mediaDataDict.MediaType);
+                // Read media type directly from the UI — SaveLabels hasn't run yet at this point
+                // so _mediaDataDict.MediaType is still empty.
+                string mediaType = (MediaTypeEntry.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                var probe = await MkvInfoProbe.ProbeAsync(firstMkv, mediaType);
                 if (probe == null)
                     return; // ProbeAsync already logged the reason
 
