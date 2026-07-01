@@ -491,7 +491,11 @@ namespace MediaNamer
 
             if (mode == "Hardlink")
             {
-                HardlinkFiles();
+                bool success = HardlinkFiles();
+                if (success)
+                    SetEpisodeFetchStatus("Hardlinks created successfully.", FetchStatus.Success);
+                else
+                    SetEpisodeFetchStatus("Hardlink creation had errors. Check the Terminal tab.", FetchStatus.Error);
             }
             else if (mode == "Rename")
             {
@@ -554,8 +558,9 @@ namespace MediaNamer
         [System.Runtime.InteropServices.DllImport("Kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
         private static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
-        private void HardlinkFiles()
+        private bool HardlinkFiles()
         {
+            bool allOk = true;
             try
             {
                 for (int i = 0; i < Math.Min(_mediaDataDict.SourceFiles.Count, _mediaDataDict.FinalFiles.Count); i++)
@@ -569,23 +574,32 @@ namespace MediaNamer
                         string formattedFinal = finalFile.StartsWith(@"\\?\") ? finalFile : @"\\?\" + finalFile;
                         string formattedSource = sourceFile.StartsWith(@"\\?\") ? sourceFile : @"\\?\" + sourceFile;
 
-                        bool success = CreateHardLink(formattedFinal, formattedSource, IntPtr.Zero);
-                        if (!success)
+                        bool ok = CreateHardLink(formattedFinal, formattedSource, IntPtr.Zero);
+                        if (!ok)
                         {
                             int errorCode = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
                             Console.WriteLine($"Failed to create hard link for {_mediaDataDict.FinalFiles[i]} (Error Code: {errorCode})");
+                            allOk = false;
                         }
                     }
                     else
                     {
                         Console.WriteLine("Hardlinking is only fully supported on Windows in this implementation.");
+                        allOk = false;
                     }
                 }
-                Console.WriteLine("Hardlink creation completed successfully.");
+
+                if (allOk)
+                    Console.WriteLine("Hardlink creation completed successfully.");
+                else
+                    Console.WriteLine("Hardlink creation completed with errors (see above).");
+
+                return allOk;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during hardlink: {ex.Message}");
+                return false;
             }
         }
 
