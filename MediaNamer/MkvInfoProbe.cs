@@ -13,7 +13,8 @@ namespace MediaNamer
     {
         public string? Resolution { get; set; }   // e.g. "1080p"
         public string? VideoFormat { get; set; }  // e.g. "H.265"
-        public string? AudioFormat { get; set; }  // e.g. "FLAC"
+        public string? AudioFormat { get; set; }  // base codec label, e.g. "DDP"
+        public string? AudioTag { get; set; }     // full audio tag, e.g. "DDP2.0" or "DDP2.0&5.1"
         public bool IsDualAudio { get; set; }      // 2+ audio tracks with distinct languages
     }
 
@@ -47,13 +48,13 @@ namespace MediaNamer
 
         /// <summary>Runs mkvinfo on the file and parses the result. Returns null if mkvinfo
         /// could not be run at all (e.g. MKVToolNix is not installed).</summary>
-        public static async Task<MkvProbeResult?> ProbeAsync(string filePath)
+        public static async Task<MkvProbeResult?> ProbeAsync(string filePath, string mediaType)
         {
             string output = await RunMkvInfoAsync(filePath);
             if (string.IsNullOrEmpty(output))
                 return null;
 
-            return Parse(output);
+            return Parse(output, mediaType);
         }
 
         private static async Task<string> RunMkvInfoAsync(string filePath)
@@ -101,10 +102,11 @@ namespace MediaNamer
             public string Type = "";       // "video" | "audio" | "subtitles"
             public string CodecId = "";
             public int? PixelHeight;
+            public int? AudioChannels;
             public string? Language;
         }
 
-        private static MkvProbeResult Parse(string output)
+        private static MkvProbeResult Parse(string output, string mediaType)
         {
             var tracks = new List<TrackInfo>();
             TrackInfo? current = null;
@@ -137,6 +139,11 @@ namespace MediaNamer
                     if (int.TryParse(ValueAfterColon(line), out int h))
                         current.PixelHeight = h;
                 }
+                else if (line.StartsWith("Audio channels:", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(ValueAfterColon(line), out int ch))
+                        current.AudioChannels = ch;
+                }
                 else if (line.StartsWith("Language", StringComparison.OrdinalIgnoreCase))
                 {
                     // Matches both "Language:" and "Language (IETF BCP 47):". Keep the first
@@ -162,7 +169,10 @@ namespace MediaNamer
 
             var audioTracks = tracks.Where(t => t.Type == "audio").ToList();
             if (audioTracks.Count > 0)
+            {
                 result.AudioFormat = MapAudioCodec(audioTracks[0].CodecId);
+                result.AudioTag = BuildAudioTag(audioTracks, mediaType);
+            }
 
             int distinctLanguages = audioTracks
                 .Select(t => t.Language)
@@ -194,12 +204,52 @@ namespace MediaNamer
             string c = codecId.ToUpperInvariant();
             if (c.Contains("FLAC")) return "FLAC";
             if (c.Contains("OPUS")) return "OPUS";
-            if (c.Contains("EAC3")) return "EAC3";              // check before AC3 ("EAC3" contains "AC3")
-            if (c.Contains("AC3")) return "AC3";
+            if (c.Contains("EAC3")) return "DDP";               // Dolby Digital Plus; check before AC3
+            if (c.Contains("AC3")) return "DD";                 // Dolby Digital
             if (c.Contains("DTS")) return "DTS";
             if (c.Contains("TRUEHD") || c.Contains("MLP")) return "TrueHD";
             if (c.Contains("AAC")) return "AAC";
             return null;
+        }
+
+        /// <summary>Maps a raw channel count to the standard release-name layout string.</summary>
+        private static string MapChannels(int channels) => channels switch
+        {
+            1 => "1.0",
+            2 => "2.0",
+            6 => "5.1",
+            8 => "7.1",
+            _ => $"{channels}.0"
+        };
+
+        private static bool IsJapanese(string? lang) => lang == "jpn" || lang == "ja";
+        private static bool IsEnglish(string? lang) => lang == "eng" || lang == "en";
+
+        /// <summary>Builds the full audio tag: codec + channel layout. For anime with separate
+        /// Japanese and English audio tracks whose layouts differ, both are shown JP first then
+        /// EN, e.g. "DDP2.0&5.1".</summary>
+        private static string? BuildAudioTag(List<TrackInfo> audioTracks, string mediaType)
+        {
+            string? codec = MapAudioCodec(audioTracks[0].CodecId);
+            if (codec == null) return null;
+
+            string firstLayout = MapChannels(audioTracks[0].AudioChannels ?? 2);
+
+            if (mediaType == "Anime")
+            {
+                var jp = audioTracks.FirstOrDefault(t => IsJapanese(t.Language));
+                var en = audioTracks.FirstOrDefault(t => IsEnglish(t.Language));
+                if (jp != null && en != null)
+                {
+                    string jpLayout = MapChannels(jp.AudioChannels ?? 2);
+                    string enLayout = MapChannels(en.AudioChannels ?? 2);
+                    if (jpLayout != enLayout)
+                        return $"{codec}{jpLayout}&{enLayout}";
+                    return $"{codec}{jpLayout}";
+                }
+            }
+
+            return $"{codec}{firstLayout}";
         }
 
         private static string MapResolution(int height)

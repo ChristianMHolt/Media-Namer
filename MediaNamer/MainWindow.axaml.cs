@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -15,6 +16,7 @@ namespace MediaNamer
     {
         private MediaDictionary _mediaDataDict = new MediaDictionary();
         private TextBoxWriter _terminalWriter;
+        private readonly DispatcherTimer _statusHideTimer;
 
         public MainWindow()
         {
@@ -22,6 +24,24 @@ namespace MediaNamer
             _terminalWriter = new TextBoxWriter(TerminalOutput);
             Console.SetOut(_terminalWriter);
             Console.SetError(_terminalWriter);
+
+            _statusHideTimer = new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, OnStatusHideTick);
+        }
+
+        private void OnStatusHideTick(object? sender, EventArgs e)
+        {
+            _statusHideTimer.Stop();
+            EpisodeFetchStatus.IsVisible = false;
+        }
+
+        private void EpisodeFetchStatus_PointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (e.GetCurrentPoint(this).Properties.PointerUpdateKind == PointerUpdateKind.RightButtonPressed)
+            {
+                _statusHideTimer.Stop();
+                EpisodeFetchStatus.IsVisible = false;
+                e.Handled = true;
+            }
         }
 
         private void UpdateExistingShowLight_TextChanged(object? sender, Avalonia.Controls.TextChangedEventArgs e)
@@ -127,7 +147,9 @@ namespace MediaNamer
                 Console.WriteLine(path);
 
                 ParseTagsFromDirectory(path);
-                await BackfillMissingInfoFromMkvAsync(path);
+                await Task.WhenAll(
+                    BackfillMissingInfoFromMkvAsync(path),
+                    AutoFetchEpisodeNamesAsync());
             }
         }
 
@@ -139,7 +161,11 @@ namespace MediaNamer
             {
                 bool needRes = ResolutionCombobox.SelectedIndex == -1;
                 bool needVideo = VideoFormatCombobox.SelectedIndex == -1;
-                bool needAudio = string.IsNullOrEmpty(AudioFormatEntry.Text);
+                // Folder names only give the bare codec (e.g. "FLAC"); mkvinfo gives codec +
+                // channel layout (e.g. "FLAC2.0"), so let it upgrade audio even when the name
+                // parse already set a codec. Only skip when the field already has a full tag.
+                bool needAudio = string.IsNullOrEmpty(AudioFormatEntry.Text)
+                                 || !Regex.IsMatch(AudioFormatEntry.Text, @"\d");
                 bool needDual = DualAudioCheckbox.IsChecked != true;
 
                 if (!needRes && !needVideo && !needAudio && !needDual)
@@ -155,7 +181,7 @@ namespace MediaNamer
                 Console.WriteLine($"\n--- mkvinfo Backfill ---");
                 Console.WriteLine($"Probing: {Path.GetFileName(firstMkv)}");
 
-                var probe = await MkvInfoProbe.ProbeAsync(firstMkv);
+                var probe = await MkvInfoProbe.ProbeAsync(firstMkv, _mediaDataDict.MediaType);
                 if (probe == null)
                     return; // ProbeAsync already logged the reason
 
@@ -169,10 +195,10 @@ namespace MediaNamer
                     SetComboBoxByContent(VideoFormatCombobox, probe.VideoFormat);
                     Console.WriteLine($"Video (mkvinfo): {probe.VideoFormat}");
                 }
-                if (needAudio && probe.AudioFormat != null)
+                if (needAudio && probe.AudioTag != null)
                 {
-                    AudioFormatEntry.Text = probe.AudioFormat;
-                    Console.WriteLine($"Audio (mkvinfo): {probe.AudioFormat}");
+                    AudioFormatEntry.Text = probe.AudioTag;
+                    Console.WriteLine($"Audio (mkvinfo): {probe.AudioTag}");
                 }
                 if (needDual && probe.IsDualAudio)
                 {
@@ -187,6 +213,62 @@ namespace MediaNamer
                 Console.WriteLine($"[mkvinfo Error] {ex.Message}");
             }
         }
+
+        // After the folder-name parse, try to pull episode names from TVMaze so the user doesn't
+        // have to open the Episode Extractor manually. Name/season come from the parse; if either
+        // is missing or the lookup fails, the status box reports why instead of blocking anything.
+        private async Task AutoFetchEpisodeNamesAsync()
+        {
+            string showName = (ShowNameEntry.Text ?? "").Trim();
+            string seasonText = (SeasonEntry.Text ?? "").Trim();
+
+            if (string.IsNullOrEmpty(showName) ||
+                !int.TryParse(seasonText, out int seasonNumber) ||
+                seasonNumber < 0)
+            {
+                SetEpisodeFetchStatus("Auto-fetch skipped: need a show name and season.", FetchStatus.Neutral);
+                return;
+            }
+
+            SetEpisodeFetchStatus($"Fetching episode names for {showName} Season {seasonNumber}…", FetchStatus.Neutral, autoHide: false);
+
+            try
+            {
+                var titles = await EpisodeExtractorLogic.FetchEpisodeTitlesFromTvmazeAsync(showName, seasonNumber);
+                if (titles.Count == 0)
+                {
+                    SetEpisodeFetchStatus($"No episodes found for {showName} Season {seasonNumber}.", FetchStatus.Error);
+                    return;
+                }
+
+                _mediaDataDict.EpisodeList = titles;
+                SetEpisodeFetchStatus($"Found {titles.Count} episodes for {showName} Season {seasonNumber}.", FetchStatus.Success);
+            }
+            catch (Exception ex)
+            {
+                SetEpisodeFetchStatus($"Online lookup failed: {ex.Message}", FetchStatus.Error);
+            }
+        }
+
+        private void SetEpisodeFetchStatus(string message, FetchStatus status, bool autoHide = true)
+        {
+            EpisodeFetchStatus.IsVisible = true;
+            EpisodeFetchStatusText.Text = message;
+            EpisodeFetchStatus.Background = status switch
+            {
+                FetchStatus.Success => Avalonia.Media.Brushes.DarkGreen,
+                FetchStatus.Error => Avalonia.Media.Brushes.DarkRed,
+                _ => Avalonia.Media.Brushes.Gray,
+            };
+
+            _statusHideTimer.Stop();
+            if (autoHide)
+            {
+                _statusHideTimer.Start();
+            }
+        }
+
+        private enum FetchStatus { Neutral, Success, Error }
 
         private void ParseTagsFromDirectory(string dirPath)
         {
@@ -281,8 +363,8 @@ namespace MediaNamer
                 else if (lowerFolder.Contains("dts")) { AudioFormatEntry.Text = "DTS"; Console.WriteLine("Audio: DTS"); }
                 else if (lowerFolder.Contains("aac")) { AudioFormatEntry.Text = "AAC"; Console.WriteLine("Audio: AAC"); }
                 else if (lowerFolder.Contains("opus")) { AudioFormatEntry.Text = "OPUS"; Console.WriteLine("Audio: OPUS"); }
-                else if (lowerFolder.Contains("eac3") || lowerFolder.Contains("ddp")) { AudioFormatEntry.Text = "EAC3"; Console.WriteLine("Audio: EAC3"); }
-                else if (lowerFolder.Contains("ac3")) { AudioFormatEntry.Text = "AC3"; Console.WriteLine("Audio: AC3"); }
+                else if (lowerFolder.Contains("eac3") || lowerFolder.Contains("ddp")) { AudioFormatEntry.Text = "DDP"; Console.WriteLine("Audio: DDP"); }
+                else if (lowerFolder.Contains("ac3") || lowerFolder.Contains("dd ") || lowerFolder.Contains("dd-")) { AudioFormatEntry.Text = "DD"; Console.WriteLine("Audio: DD"); }
 
                 // Extract Show Name and Season
                 string cleanName = Regex.Replace(folderName, @"\[.*?\]|\(.*?\)", "");

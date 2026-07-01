@@ -23,6 +23,7 @@
         </Style>
     </Window.Styles>
 
+    <Panel>
     <TabControl>
         <TabItem Header="Main">
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto,Auto" Margin="10">
@@ -91,4 +92,15 @@
 				Margin="10"/>
 		</TabItem>
     </TabControl>
+    <Border x:Name="EpisodeFetchStatus"
+            Background="Gray" CornerRadius="8" Padding="16,10"
+            BorderBrush="Black" BorderThickness="1"
+            BoxShadow="0 2 8 0 #80000000"
+            HorizontalAlignment="Center" VerticalAlignment="Top"
+            IsVisible="False" MaxWidth="500" MinWidth="300" Margin="0,10,0,0"
+            PointerPressed="EpisodeFetchStatus_PointerPressed"
+            ToolTip.Tip="Right-click to dismiss">
+        <TextBlock x:Name="EpisodeFetchStatusText" Text="" Foreground="White" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+    </Border>
+    </Panel>
 </Window>

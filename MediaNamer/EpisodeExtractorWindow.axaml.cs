@@ -25,6 +25,15 @@ namespace MediaNamer
             MediaDataDict = mediaDataDict;
             ShowName = showName;
             Season = season;
+
+            // If episodes were already loaded (e.g. by the directory-select auto-fetch), show them
+            // so the user can review/edit without re-fetching.
+            if (MediaDataDict.EpisodeList != null && MediaDataDict.EpisodeList.Count > 0)
+            {
+                OutputText.Text = string.Join(",", MediaDataDict.EpisodeList);
+                CountLabel.Text = $"Episodes loaded: {MediaDataDict.EpisodeList.Count}";
+                CountLabel.Foreground = Brushes.Green;
+            }
         }
 
         private void ProcessAndSave_Click(object sender, RoutedEventArgs e)
